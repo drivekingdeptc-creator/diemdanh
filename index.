@@ -1,0 +1,158 @@
+html<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VDC AI Check-in - PC Vĩnh Long</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef2f7; margin: 0; padding: 20px; text-align: center; }
+        .container { background: white; max-width: 450px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .logo { font-weight: bold; color: #0055a5; font-size: 24px; margin-bottom: 5px; }
+        .sub-title { color: #666; font-size: 14px; margin-bottom: 20px; }
+        #video-container { position: relative; width: 100%; border-radius: 15px; overflow: hidden; background: #000; line-height: 0; }
+        video { width: 100%; height: auto; transform: scaleX(-1); }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); }
+        .form-group { margin: 15px 0; }
+        input { width: 90%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+        button { background: #0055a5; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 16px; }
+        button:disabled { background: #ccc; }
+        .info-card { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-top: 15px; text-align: left; display: none; border-left: 5px solid #28a745; }
+        #loading-overlay { color: #0055a5; font-weight: bold; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo">VDC SMART CHECK-IN</div>
+    <div class="sub-title">Hệ thống điểm danh AI - PC Vĩnh Long</div>
+    
+    <div id="loading-overlay">Đang nạp mô hình AI...</div>
+
+    <div id="registration-form">
+        <input type="text" id="nameInput" placeholder="Nhập Họ và Tên để đăng ký...">
+        <button id="btnCheck" onclick="verifyStudent()" disabled>Kiểm tra thông tin</button>
+    </div>
+
+    <div id="main-ui" style="display:none;">
+        <div id="video-container">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="overlay"></canvas>
+        </div>
+        
+        <div id="infoCard" class="info-card">
+            <div id="studentDetail"></div>
+        </div>
+
+        <button id="btnAction" onclick="processAttendance()">ĐANG XỬ LÝ...</button>
+    </div>
+
+    <div id="statusMsg" style="margin-top:15px; font-weight:bold;"></div>
+</div>
+
+<script>
+    // Dữ liệu mẫu (Bạn có thể nhúng toàn bộ danh sách từ file CSV vào đây)
+    const studentList = [
+        {stt: 1, name: "Trần Trung Thông", unit: "Phòng Điều độ"},
+        {stt: 2, name: "Phạm Tấn Khoa", unit: "Phòng Điều độ"},
+        {stt: 3, name: "Nguyễn Văn Tân", unit: "Điện lực Ba Tri"},
+        {stt: 58, name: "Lê Văn Cảm", unit: "Điện lực Thạnh Phú"},
+        {stt: 63, name: "Võ Thành Trực", unit: "Điện lực Thạnh Phú"}
+    ];
+
+    let currentStudent = null;
+    let isRegistered = false;
+
+    // 1. Nạp Model AI
+    async function initAI() {
+        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+        await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+        ]);
+        document.getElementById('loading-overlay').style.display = 'none';
+        document.getElementById('btnCheck').disabled = false;
+        checkLocalUser();
+    }
+
+    // 2. Kiểm tra nếu máy này đã từng đăng ký
+    function checkLocalUser() {
+        const saved = localStorage.getItem('vdc_user_data');
+        if (saved) {
+            currentStudent = JSON.parse(saved);
+            isRegistered = true;
+            startUI();
+        }
+    }
+
+    function verifyStudent() {
+        const input = document.getElementById('nameInput').value.trim();
+        const found = studentList.find(s => s.name.toLowerCase() === input.toLowerCase());
+        
+        if (found) {
+            currentStudent = found;
+            isRegistered = false;
+            startUI();
+        } else {
+            alert("Không tìm thấy tên trong danh sách lớp!");
+        }
+    }
+
+    async function startUI() {
+        document.getElementById('registration-form').style.display = 'none';
+        document.getElementById('main-ui').style.display = 'block';
+        document.getElementById('studentDetail').innerHTML = `
+            <b>Học viên:</b> ${currentStudent.name}<br>
+            <b>Đơn vị:</b> ${currentStudent.unit}<br>
+            <b>STT:</b> ${currentStudent.stt}
+        `;
+        document.getElementById('infoCard').style.display = 'block';
+        document.getElementById('btnAction').innerText = isRegistered ? "CHỤP ẢNH ĐIỂM DANH" : "XÁC NHẬN KHUÔN MẶT LẦN ĐẦU";
+
+        const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+        document.getElementById('video').srcObject = stream;
+    }
+
+    async function processAttendance() {
+        const video = document.getElementById('video');
+        const status = document.getElementById('statusMsg');
+        
+        // Detect khuôn mặt hiện tại
+        const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                                       .withFaceLandmarks()
+                                       .withFaceDescriptor();
+
+        if (!detection) {
+            status.innerText = "❌ Không tìm thấy khuôn mặt! Hãy nhìn thẳng vào camera.";
+            status.style.color = "red";
+            return;
+        }
+
+        if (!isRegistered) {
+            // Lần đầu: Lưu descriptor vào LocalStorage (Sau này nên lưu vào Firebase)
+            const userData = { ...currentStudent, descriptor: Array.from(detection.descriptor) };
+            localStorage.setItem('vdc_user_data', JSON.stringify(userData));
+            status.innerText = "✅ Đăng ký khuôn mặt thành công! Lần sau bạn chỉ cần quét mặt.";
+            status.style.color = "green";
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            // Lần sau: So sánh
+            const savedDescriptor = new Float32Array(currentStudent.descriptor);
+            const distance = faceapi.euclideanDistance(savedDescriptor, detection.descriptor);
+
+            if (distance < 0.6) { // Ngưỡng chấp nhận
+                status.innerText = `✅ Điểm danh thành công! Khớp: ${((1 - distance) * 100).toFixed(0)}%`;
+                status.style.color = "green";
+                // Gửi dữ liệu điểm danh về Firebase ở đây
+            } else {
+                status.innerText = "❌ Không đúng khuôn mặt đã đăng ký!";
+                status.style.color = "red";
+            }
+        }
+    }
+
+    initAI();
+</script>
+</body>
+</html>
