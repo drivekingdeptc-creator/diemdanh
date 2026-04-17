@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HEPC - Nộp Bài Kiểm Tra</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/browser-image-compression@2.0.2/dist/browser-image-compression.js"></script>
+    <style>
+        body { font-family: Arial; padding: 20px; line-height: 1.6; }
+        .container { max-width: 400px; margin: auto; border: 1px solid #ccc; padding: 20px; border-radius: 10px; }
+        input, button { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        #status { color: blue; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        ### NỘP BÀI KIỂM TRA HEPC
+        <input type="number" id="stt" placeholder="Số thứ tự (STT)">
+        <input type="text" id="hoTen" placeholder="Họ và tên">
+        <input type="file" id="fileAnh" accept="image/*" capture="environment">
+        <button onclick="nopBai()">NỘP BÀI</button>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
+            authDomain: "hepc-ed95d.firebaseapp.com",
+            projectId: "hepc-ed95d",
+            storageBucket: "hepc-ed95d.firebasestorage.app",
+            messagingSenderId: "536861347284",
+            appId: "1:536861347284:web:61d162705878577f741a41"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const storage = firebase.storage();
+
+        async function nopBai() {
+            const stt = document.getElementById('stt').value;
+            const hoTen = document.getElementById('hoTen').value;
+            const file = document.getElementById('fileAnh').files[0];
+            const statusLabel = document.getElementById('status');
+
+            if(!stt || !hoTen || !file) return alert("Vui lòng điền đủ thông tin và chụp ảnh!");
+
+            statusLabel.innerText = "Đang nén ảnh và tải lên...";
+
+            try {
+                // 1. Nén ảnh (giảm xuống còn khoảng 800KB để AI đọc tốt mà nộp nhanh)
+                const options = { maxSizeMB: 0.8, maxWidthOrHeight: 1920, useWebWorker: true };
+                const compressedFile = await imageCompression(file, options);
+
+                // 2. Tải lên Storage
+                const fileName = `phieu_tra_loi/${stt}_${Date.now()}.jpg`;
+                const storageRef = storage.ref(fileName);
+                await storageRef.put(compressedFile);
+                const url = await storageRef.getDownloadURL();
+
+                // 3. Lưu vào Database
+                await database.ref('bai_lam/' + stt).set({
+                    stt: stt,
+                    hoTen: hoTen,
+                    urlAnh: url,
+                    status: "cho_cham",
+                    thoiGian: new Date().toLocaleString()
+                });
+
+                statusLabel.innerText = "Nộp bài thành công! Giảng viên đã nhận được.";
+                alert("Chúc mừng anh/chị đã hoàn thành bài thi!");
+            } catch (error) {
+                console.error(error);
+                statusLabel.innerText = "Lỗi: " + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
