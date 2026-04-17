@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HEPC Dashboard - Giảng Viên</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #004a99; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .status-waiting { color: orange; font-weight: bold; }
+        .status-done { color: green; font-weight: bold; }
+        .img-preview { width: 50px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>DANH SÁCH HỌC VIÊN NỘP BÀI (REAL-TIME)</h2>
+    <div id="count">Số lượng: 0</div>
+    <table>
+        <thead>
+            <tr>
+                <th>STT</th>
+                <th>Họ và Tên</th>
+                <th>Thời gian</th>
+                <th>Ảnh bài làm</th>
+                <th>Trạng thái chấm</th>
+                <th>Điểm số</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
+            authDomain: "hepc-ed95d.firebaseapp.com",
+            projectId: "hepc-ed95d",
+            databaseURL: "https://hepc-ed95d-default-rtdb.firebaseio.com", // Kiểm tra lại URL này trong console
+            storageBucket: "hepc-ed95d.firebasestorage.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        
+        const ref = firebase.database().ref('danh_sach_nop');
+        ref.on('value', (snapshot) => {
+            const data = snapshot.val();
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = "";
+            let count = 0;
+            
+            if (data) {
+                Object.values(data).sort((a,b) => a.stt - b.stt).forEach(item => {
+                    count++;
+                    const row = `<tr>
+                        <td>${item.stt}</td>
+                        <td>${item.hoTen}</td>
+                        <td>${item.thoiGian}</td>
+                        <td><a href="${item.urlAnh}" target="_blank">Xem ảnh</a></td>
+                        <td class="${item.status == 'cho_cham' ? 'status-waiting' : 'status-done'}">
+                            ${item.status == 'cho_cham' ? '⏳ Đang chờ AI' : '✅ Đã xong'}
+                        </td>
+                        <td><strong>${item.diem}</strong></td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            }
+            document.getElementById('count').innerText = "Tổng số học viên đã nộp: " + count;
+        });
+    </script>
+</body>
+</html>
