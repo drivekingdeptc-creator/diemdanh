@@ -1,4 +1,4 @@
-html<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
@@ -6,96 +6,180 @@ html<!DOCTYPE html>
     <title>VDC AI Check-in - PC Vĩnh Long</title>
     <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef2f7; margin: 0; padding: 20px; text-align: center; }
-        .container { background: white; max-width: 450px; margin: auto; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
-        .logo { font-weight: bold; color: #0055a5; font-size: 24px; margin-bottom: 5px; }
-        .sub-title { color: #666; font-size: 14px; margin-bottom: 20px; }
-        #video-container { position: relative; width: 100%; border-radius: 15px; overflow: hidden; background: #000; line-height: 0; }
-        video { width: 100%; height: auto; transform: scaleX(-1); }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; transform: scaleX(-1); }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f7f9; margin: 0; padding: 15px; text-align: center; }
+        .container { background: white; max-width: 450px; margin: auto; padding: 20px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .logo { font-weight: bold; color: #0055a5; font-size: 22px; margin-bottom: 5px; }
+        .sub-title { color: #666; font-size: 13px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        #video-container { position: relative; width: 100%; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 15px; }
+        video { width: 100%; transform: scaleX(-1); }
         .form-group { margin: 15px 0; }
-        input { width: 90%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
-        button { background: #0055a5; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; font-size: 16px; }
-        button:disabled { background: #ccc; }
-        .info-card { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-top: 15px; text-align: left; display: none; border-left: 5px solid #28a745; }
-        #loading-overlay { color: #0055a5; font-weight: bold; margin-bottom: 10px; }
+        input { width: 90%; padding: 14px; border: 2px solid #0055a5; border-radius: 10px; font-size: 16px; outline: none; }
+        button { background: #0055a5; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; font-weight: bold; width: 100%; font-size: 16px; transition: 0.3s; }
+        button:disabled { background: #cbd5e0; }
+        .info-card { background: #eef6ff; padding: 15px; border-radius: 10px; margin-top: 15px; text-align: left; border-left: 5px solid #0055a5; display: none; }
+        #statusMsg { margin-top: 15px; font-weight: bold; min-height: 24px; }
+        .loading-text { color: #0055a5; font-size: 14px; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="logo">VDC SMART CHECK-IN</div>
-    <div class="sub-title">Hệ thống điểm danh AI - PC Vĩnh Long</div>
+    <div class="sub-title">Lớp Huấn Luyện ATVSLĐ - PC Vĩnh Long</div>
     
-    <div id="loading-overlay">Đang nạp mô hình AI...</div>
+    <div id="loading-overlay" class="loading-text">Đang khởi động AI...</div>
 
-    <div id="registration-form">
-        <input type="text" id="nameInput" placeholder="Nhập Họ và Tên để đăng ký...">
-        <button id="btnCheck" onclick="verifyStudent()" disabled>Kiểm tra thông tin</button>
+    <div id="registration-form" style="display:none;">
+        <p style="font-size: 14px; color: #444;">Nhập Họ tên để đăng ký khuôn mặt lần đầu</p>
+        <input type="text" id="nameInput" placeholder="Ví dụ: Tran Trung Thong..." onkeyup="handleEnter(event)">
+        <button id="btnCheck" onclick="verifyStudent()" style="margin-top: 10px;">KIỂM TRA THÔNG TIN</button>
     </div>
 
     <div id="main-ui" style="display:none;">
         <div id="video-container">
             <video id="video" autoplay muted playsinline></video>
-            <canvas id="overlay"></canvas>
         </div>
         
         <div id="infoCard" class="info-card">
-            <div id="studentDetail"></div>
+            <div id="studentDetail" style="line-height: 1.6;"></div>
         </div>
 
-        <button id="btnAction" onclick="processAttendance()">ĐANG XỬ LÝ...</button>
+        <button id="btnAction" onclick="processAttendance()">ĐANG KHỞI TẠO...</button>
+        <button onclick="resetUser()" style="background: none; color: #666; font-size: 12px; margin-top: 10px; text-decoration: underline; border: none; cursor: pointer;">Đăng ký lại bằng tên khác</button>
     </div>
 
-    <div id="statusMsg" style="margin-top:15px; font-weight:bold;"></div>
+    <div id="statusMsg"></div>
 </div>
 
 <script>
-    // Dữ liệu mẫu (Bạn có thể nhúng toàn bộ danh sách từ file CSV vào đây)
+    // DANH SÁCH 77 HỌC VIÊN PC VĨNH LONG
     const studentList = [
-        {stt: 1, name: "Trần Trung Thông", unit: "Phòng Điều độ"},
-        {stt: 2, name: "Phạm Tấn Khoa", unit: "Phòng Điều độ"},
-        {stt: 3, name: "Nguyễn Văn Tân", unit: "Điện lực Ba Tri"},
-        {stt: 58, name: "Lê Văn Cảm", unit: "Điện lực Thạnh Phú"},
-        {stt: 63, name: "Võ Thành Trực", unit: "Điện lực Thạnh Phú"}
+        {stt:1, name:"Trần Trung Thông", unit:"Phòng Điều độ"},
+        {stt:2, name:"Phạm Tấn Khoa", unit:"Phòng Điều độ"},
+        {stt:3, name:"Nguyễn Văn Tân", unit:"Điện lực Ba Tri"},
+        {stt:4, name:"Nguyễn Văn Trí", unit:"Điện lực Ba Tri"},
+        {stt:5, name:"Phạm Văn Lực", unit:"Điện lực Ba Tri"},
+        {stt:6, name:"Trần Văn Tùng", unit:"Điện lực Ba Tri"},
+        {stt:7, name:"Lê Minh Trí", unit:"Điện lực Ba Tri"},
+        {stt:8, name:"Huỳnh Văn Sang", unit:"Điện lực Ba Tri"},
+        {stt:9, name:"Nguyễn Văn Tuấn", unit:"Điện lực Ba Tri"},
+        {stt:10, name:"Lê Hoàng Nhân", unit:"Điện lực Ba Tri"},
+        {stt:11, name:"Nguyễn Trọng Thùy", unit:"Điện lực Ba Tri"},
+        {stt:12, name:"Trần Văn Tiền", unit:"Điện lực Ba Tri"},
+        {stt:13, name:"Võ Văn Nhứt", unit:"Điện lực Ba Tri"},
+        {stt:14, name:"Lê Minh Luân", unit:"Điện lực Ba Tri"},
+        {stt:15, name:"Nguyễn Quốc Nghĩa", unit:"Điện lực Ba Tri"},
+        {stt:16, name:"Phạm Văn Luân", unit:"Điện lực Ba Tri"},
+        {stt:17, name:"Lâm Thanh Bình", unit:"Điện lực Ba Tri"},
+        {stt:18, name:"Phạm Văn Hưng", unit:"Điện lực Ba Tri"},
+        {stt:19, name:"Lâm Hoài Thanh", unit:"Điện lực Ba Tri"},
+        {stt:20, name:"Bùi Văn Út", unit:"Điện lực Ba Tri"},
+        {stt:21, name:"Trần Tuấn Khải", unit:"Điện lực Ba Tri"},
+        {stt:22, name:"Nguyễn Hoài Bảo", unit:"Điện lực Ba Tri"},
+        {stt:23, name:"Nguyễn Ngọc Chánh", unit:"Điện lực Ba Tri"},
+        {stt:24, name:"Nguyễn Văn Quới", unit:"Điện lực Ba Tri"},
+        {stt:25, name:"Lê Thanh Long", unit:"Điện lực Ba Tri"},
+        {stt:26, name:"Nguyễn Văn Điền", unit:"Điện lực Ba Tri"},
+        {stt:27, name:"Nguyễn Thành Tâm", unit:"Điện lực Ba Tri"},
+        {stt:28, name:"Hà Tấn Lộc", unit:"Điện lực Ba Tri"},
+        {stt:29, name:"Lê Anh Tuấn", unit:"Điện lực Bình Đại"},
+        {stt:30, name:"Nguyễn Tuấn Linh", unit:"Điện lực Bình Đại"},
+        {stt:31, name:"Nguyễn Duy Thanh", unit:"Điện lực Bình Đại"},
+        {stt:32, name:"Nguyễn Phước Lộc", unit:"Điện lực Bình Đại"},
+        {stt:33, name:"Dương Văn Thọ", unit:"Điện lực Bình Đại"},
+        {stt:34, name:"Trần Tuấn Kiệt", unit:"Điện lực Bình Đại"},
+        {stt:35, name:"Trần Hoàng Phúc", unit:"Điện lực Bình Đại"},
+        {stt:36, name:"Phạm Văn Phước", unit:"Điện lực Bình Đại"},
+        {stt:37, name:"Đặng Xuân Trường", unit:"Điện lực Bình Đại"},
+        {stt:38, name:"Nguyễn Duy Tân", unit:"Điện lực Bình Đại"},
+        {stt:39, name:"Trần Công Lý", unit:"Điện lực Bình Đại"},
+        {stt:40, name:"Nguyễn Tấn Đạt", unit:"Điện lực Bình Đại"},
+        {stt:41, name:"Nguyễn Thanh Tùng", unit:"Điện lực Bình Đại"},
+        {stt:42, name:"Nguyễn Minh Đạt", unit:"Điện lực Bình Đại"},
+        {stt:43, name:"Nguyễn Duy Thái", unit:"Điện lực Bình Đại"},
+        {stt:44, name:"Nguyễn Thành Phước", unit:"Điện lực Bình Đại"},
+        {stt:45, name:"Võ Xuân Thanh", unit:"Điện lực Chợ Lách"},
+        {stt:46, name:"Nguyễn Văn Tuấn", unit:"Điện lực Chợ Lách"},
+        {stt:47, name:"Phạm Duy Linh", unit:"Điện lực Chợ Lách"},
+        {stt:48, name:"Hồ Minh Hải", unit:"Điện lực Chợ Lách"},
+        {stt:49, name:"Bùi Tấn Hoàng", unit:"Điện lực Chợ Lách"},
+        {stt:50, name:"Lê Văn Triết", unit:"Điện lực Chợ Lách"},
+        {stt:51, name:"Lê Văn Nhanh", unit:"Điện lực Chợ Lách"},
+        {stt:52, name:"Huỳnh Trọng Thủy", unit:"Điện lực Chợ Lách"},
+        {stt:53, name:"Bùi Cao Đẳng", unit:"Điện lực Chợ Lách"},
+        {stt:54, name:"Trương Văn Hiền", unit:"Điện lực Chợ Lách"},
+        {stt:55, name:"Nguyễn Văn Hoàng", unit:"Điện lực Thạnh Phú"},
+        {stt:56, name:"Lê Thanh Long", unit:"Điện lực Thạnh Phú"},
+        {stt:57, name:"Dương Văn Thái", unit:"Điện lực Thạnh Phú"},
+        {stt:58, name:"Lê Văn Cảm", unit:"Điện lực Thạnh Phú"},
+        {stt:59, name:"Nguyễn Duy Thanh", unit:"Điện lực Thạnh Phú"},
+        {stt:60, name:"Lê Hoàng Thái", unit:"Điện lực Thạnh Phú"},
+        {stt:61, name:"Lâm Thanh Tú", unit:"Điện lực Thạnh Phú"},
+        {stt:62, name:"Nguyễn Thành Đông", unit:"Điện lực Thạnh Phú"},
+        {stt:63, name:"Võ Thành Trực", unit:"Điện lực Thạnh Phú"},
+        {stt:64, name:"Lê Duy Phương", unit:"Điện lực Thạnh Phú"},
+        {stt:65, name:"Trần Văn Lòng", unit:"Điện lực Thạnh Phú"},
+        {stt:66, name:"Lê Trung Nguyện", unit:"Điện lực Thạnh Phú"},
+        {stt:67, name:"Nguyễn Thanh Phong", unit:"Điện lực Thạnh Phú"},
+        {stt:68, name:"Trần Văn Thảo", unit:"Điện lực Thạnh Phú"},
+        {stt:69, name:"Lê Nguyễn Nhật Tân", unit:"Điện lực Thạnh Phú"},
+        {stt:70, name:"Đặng Duy Khiêm", unit:"Điện lực Thạnh Phú"},
+        {stt:71, name:"Ngô Trọng Tín", unit:"Điện lực Thạnh Phú"},
+        {stt:72, name:"Bùi Văn Thành", unit:"Điện lực Thạnh Phú"},
+        {stt:73, name:"Trần Quốc Đạt", unit:"Điện lực Thạnh Phú"},
+        {stt:74, name:"Nguyễn Văn Đạt", unit:"Điện lực Thạnh Phú"},
+        {stt:75, name:"Trương Minh Hiếu", unit:"Điện lực Thạnh Phú"},
+        {stt:76, name:"Nguyễn Thanh Phong", unit:"Phòng Kỹ thuật"},
+        {stt:77, name:"Lê Văn Bình", unit:"Phòng An toàn"}
     ];
 
     let currentStudent = null;
     let isRegistered = false;
 
-    // 1. Nạp Model AI
-    async function initAI() {
-        const MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
-        await Promise.all([
-            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-        ]);
-        document.getElementById('loading-overlay').style.display = 'none';
-        document.getElementById('btnCheck').disabled = false;
-        checkLocalUser();
+    // Chuẩn hóa chuỗi (không dấu, không hoa)
+    function cleanString(str) {
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
     }
 
-    // 2. Kiểm tra nếu máy này đã từng đăng ký
+    async function initAI() {
+        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+        try {
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+            ]);
+            document.getElementById('loading-overlay').style.display = 'none';
+            checkLocalUser();
+        } catch (e) {
+            document.getElementById('loading-overlay').innerText = "Lỗi nạp mô hình AI. Vui lòng reload trang.";
+        }
+    }
+
     function checkLocalUser() {
-        const saved = localStorage.getItem('vdc_user_data');
+        const saved = localStorage.getItem('vdc_user_id');
         if (saved) {
             currentStudent = JSON.parse(saved);
             isRegistered = true;
             startUI();
+        } else {
+            document.getElementById('registration-form').style.display = 'block';
         }
     }
 
     function verifyStudent() {
-        const input = document.getElementById('nameInput').value.trim();
-        const found = studentList.find(s => s.name.toLowerCase() === input.toLowerCase());
+        const input = cleanString(document.getElementById('nameInput').value);
+        if (input.length < 3) return alert("Vui lòng nhập đầy đủ họ tên");
+
+        const found = studentList.find(s => cleanString(s.name) === input);
         
         if (found) {
             currentStudent = found;
             isRegistered = false;
             startUI();
         } else {
-            alert("Không tìm thấy tên trong danh sách lớp!");
+            alert("Không tìm thấy tên trong danh sách 77 học viên!");
         }
     }
 
@@ -103,54 +187,65 @@ html<!DOCTYPE html>
         document.getElementById('registration-form').style.display = 'none';
         document.getElementById('main-ui').style.display = 'block';
         document.getElementById('studentDetail').innerHTML = `
-            <b>Học viên:</b> ${currentStudent.name}<br>
-            <b>Đơn vị:</b> ${currentStudent.unit}<br>
-            <b>STT:</b> ${currentStudent.stt}
+            <b>STT:</b> ${currentStudent.stt} <br>
+            <b>Họ tên:</b> ${currentStudent.name} <br>
+            <b>Đơn vị:</b> ${currentStudent.unit}
         `;
         document.getElementById('infoCard').style.display = 'block';
-        document.getElementById('btnAction').innerText = isRegistered ? "CHỤP ẢNH ĐIỂM DANH" : "XÁC NHẬN KHUÔN MẶT LẦN ĐẦU";
+        document.getElementById('btnAction').innerText = isRegistered ? "CHỤP ẢNH ĐIỂM DANH" : "ĐĂNG KÝ KHUÔN MẶT LẦN ĐẦU";
 
-        const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         document.getElementById('video').srcObject = stream;
     }
 
     async function processAttendance() {
         const video = document.getElementById('video');
         const status = document.getElementById('statusMsg');
-        
-        // Detect khuôn mặt hiện tại
+        const btn = document.getElementById('btnAction');
+        btn.disabled = true;
+        status.innerText = "⌛ Đang phân tích khuôn mặt...";
+
         const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
                                        .withFaceLandmarks()
                                        .withFaceDescriptor();
 
         if (!detection) {
-            status.innerText = "❌ Không tìm thấy khuôn mặt! Hãy nhìn thẳng vào camera.";
+            status.innerText = "❌ Không nhận diện được mặt! Hãy nhìn thẳng.";
             status.style.color = "red";
+            btn.disabled = false;
             return;
         }
 
         if (!isRegistered) {
-            // Lần đầu: Lưu descriptor vào LocalStorage (Sau này nên lưu vào Firebase)
             const userData = { ...currentStudent, descriptor: Array.from(detection.descriptor) };
-            localStorage.setItem('vdc_user_data', JSON.stringify(userData));
-            status.innerText = "✅ Đăng ký khuôn mặt thành công! Lần sau bạn chỉ cần quét mặt.";
+            localStorage.setItem('vdc_user_id', JSON.stringify(userData));
+            status.innerText = "✅ Đã lưu khuôn mặt! Đang chuyển sang điểm danh...";
             status.style.color = "green";
-            setTimeout(() => location.reload(), 2000);
+            setTimeout(() => location.reload(), 1500);
         } else {
-            // Lần sau: So sánh
             const savedDescriptor = new Float32Array(currentStudent.descriptor);
             const distance = faceapi.euclideanDistance(savedDescriptor, detection.descriptor);
 
-            if (distance < 0.6) { // Ngưỡng chấp nhận
-                status.innerText = `✅ Điểm danh thành công! Khớp: ${((1 - distance) * 100).toFixed(0)}%`;
-                status.style.color = "green";
-                // Gửi dữ liệu điểm danh về Firebase ở đây
+            if (distance < 0.55) {
+                status.innerText = `✅ ĐÃ ĐIỂM DANH XONG! (STT: ${currentStudent.stt})`;
+                status.style.color = "#0055a5";
+                btn.innerText = "THÀNH CÔNG";
             } else {
-                status.innerText = "❌ Không đúng khuôn mặt đã đăng ký!";
+                status.innerText = "❌ Sai khuôn mặt hoặc ảnh quá tối!";
                 status.style.color = "red";
+                btn.disabled = false;
             }
         }
     }
+
+    function resetUser() {
+        if(confirm("Bạn muốn xóa dữ liệu đăng ký cũ để nhập tên khác?")) {
+            localStorage.removeItem('vdc_user_id');
+            location.reload();
+        }
+    }
+
+    function handleEnter(e) { if(e.key === 'Enter') verifyStudent(); }
 
     initAI();
 </script>
