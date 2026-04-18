@@ -2,36 +2,29 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>VDC Admin v1.1.9</title>
+    <title>VDC ADMIN v1.2.0</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }
         .box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        textarea { width: 100%; height: 120px; padding: 10px; box-sizing: border-box; }
         .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background: #007bff; color: white; }
         table { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; }
-        th, td { border: 1px solid #eee; padding: 10px; font-size: 12px; text-align: left; }
+        th, td { border: 1px solid #eee; padding: 12px; font-size: 13px; text-align: left; }
         th { background: #007bff; color: white; }
-        img { border-radius: 4px; border: 1px solid #ccc; }
+        img { border-radius: 4px; border: 1px solid #ccc; object-fit: cover; }
     </style>
 </head>
 <body>
-    <h2>VDC ADMIN v1.1.9</h2>
+    <h2>VDC ADMIN v1.2.0 - HEPC SAFETY</h2>
+    <div id="stats" style="margin-bottom: 10px; font-weight: bold; color: #28a745;">ĐANG KẾT NỐI...</div>
     <div class="box">
-        <button class="btn" onclick="document.getElementById('ubox').classList.toggle('hidden')">NẠP MASTER LIST</button>
-        <div id="ubox" style="margin-top:15px;" class="hidden">
-            <textarea id="csv" placeholder="STT | Họ tên | Phái | Ngày sinh | Bậc | Chức danh | Đơn vị | Công ty | Hình thức..."></textarea>
-            <button class="btn" onclick="upload()">TẢI LÊN</button>
-        </div>
-    </div>
-    <div class="box">
-        <h3 id="stat">Đang tải...</h3>
-        <table id="tbl">
-            <thead><tr><th>STT</th><th>Họ Tên</th><th>Ngày sinh</th><th>Đơn vị</th><th>Ảnh</th><th>Thao tác</th></tr></thead>
-            <tbody></tbody>
+        <table>
+            <thead><tr><th>STT</th><th>Họ Tên</th><th>Chức danh</th><th>Đơn vị</th><th>Thời gian</th><th>Ảnh 3x4</th><th>Thao tác</th></tr></thead>
+            <tbody id="tblBody"></tbody>
         </table>
     </div>
+
 <script>
     const firebaseConfig = {
         apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
@@ -45,33 +38,18 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    async function upload() {
-        const raw = document.getElementById('csv').value.trim();
-        const lines = raw.split('\n');
-        for (let line of lines) {
-            const c = line.split('\t');
-            if(c.length >= 2) {
-                const stt = c[0].trim();
-                await db.ref('master_list/' + stt).set({
-                    stt, name: c[1], gender: c[2], dob: c[3], rank: c[4], 
-                    position: c[5], department: c[6], company: c[7], type: c[8]
-                });
-            }
-        }
-        alert("Xong!"); location.reload();
-    }
-
     db.ref('students').on('value', snap => {
         const data = snap.val() || {};
-        const tbody = document.querySelector('#tbl tbody');
+        const tbody = document.getElementById('tblBody');
         tbody.innerHTML = '';
         const list = Object.values(data);
-        document.getElementById('stat').innerText = "ĐÃ ĐIỂM DANH: " + list.length;
+        document.getElementById('stats').innerText = "TỔNG CỘNG ĐÃ ĐIỂM DANH: " + list.length + " HỌC VIÊN";
         list.sort((a,b) => parseInt(a.stt) - parseInt(b.stt)).forEach(u => {
             tbody.innerHTML += `<tr>
-                <td>${u.stt}</td><td><b>${u.name}</b></td><td>${u.dob}</td>
-                <td>${u.department}</td><td><img src="${u.photo}" width="40" height="53"></td>
-                <td><button onclick="if(confirm('Xóa?')) db.ref('students/${u.stt}').remove()">Xóa</button></td>
+                <td>${u.stt}</td><td><b>${u.name}</b></td><td>${u.position || "-"}</td>
+                <td>${u.department || "-"}</td><td>${u.time}</td>
+                <td><img src="${u.photo}" width="50" height="66"></td>
+                <td><button onclick="if(confirm('Xóa?')) db.ref('students/${u.stt}').remove()" style="color:red; background:none; border:none; cursor:pointer;">Xóa</button></td>
             </tr>`;
         });
     });
