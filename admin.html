@@ -2,47 +2,104 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quản lý HEPC - Mr. An Toàn v1.1.2</title>
+    <title>VDC - Quản lý Đào tạo HEPC v1.1.4</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-        .box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 25px; }
-        textarea { width: 100%; height: 150px; margin: 10px 0; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: monospace; }
-        .btn { padding: 12px 25px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn:disabled { background: #ccc; cursor: not-allowed; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 8px; overflow: hidden; }
-        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
-        th { background: #007bff; color: white; }
-        img { border-radius: 4px; border: 1px solid #ccc; object-fit: cover; }
+        :root { --primary: #007bff; --success: #28a745; --dark: #343a40; }
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f8f9fa; color: var(--dark); }
+        .container { max-width: 1100px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        /* Tab Menu */
+        .tab-menu { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #dee2e6; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; border: none; background: #e9ecef; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        
+        .box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .hidden { display: none; }
+        
+        textarea { width: 100%; height: 120px; margin: 10px 0; padding: 12px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; }
+        .btn { padding: 12px 25px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn:disabled { background: #ccc; }
+
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: left; font-size: 13px; }
+        th { background: var(--primary); color: white; position: sticky; top: 0; }
+        tr:nth-child(even) { background-color: #fcfcfc; }
+        tr:hover { background-color: #f1f7ff; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
+        .bg-success { background: #d4edda; color: #155724; }
+        .bg-wait { background: #fff3cd; color: #856404; }
+        img { border-radius: 5px; border: 1px solid #ddd; cursor: zoom-in; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, min-minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 15px; border-radius: 12px; border-left: 5px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
 
-    <div class="box">
-        <h2>1. NẠP DANH SÁCH GỐC (MASTER LIST)</h2>
-        <p style="font-size: 13px; color: #666;">Copy từ Excel: STT | Họ tên | Phái | Ngày sinh | Bậc | Chức danh | Đơn vị | Công ty | Hình thức</p>
-        <textarea id="csvData" placeholder="Dán dữ liệu Excel tại đây..."></textarea>
-        <button class="btn" id="btnUpload" onclick="uploadList()">CẬP NHẬT DANH SÁCH</button>
+<div class="container">
+    <div class="header">
+        <h2>HỆ THỐNG QUẢN TRỊ VDC - HEPC</h2>
+        <div style="font-size: 14px; color: #666;">Phiên bản 1.1.4-stable</div>
     </div>
 
-    <div class="box">
-        <h2>2. DANH SÁCH HỌC VIÊN ĐÃ ĐIỂM DANH</h2>
-        <div id="count" style="font-weight: bold; color: #28a745; margin-bottom: 10px;">Đang kết nối dữ liệu...</div>
-        <table id="listTable">
+    <div class="stats-grid">
+        <div class="stat-card" style="border-left-color: #007bff;">
+            <div style="font-size: 12px; color: #888;">TỔNG DANH SÁCH GỐC</div>
+            <div id="stat-total" style="font-size: 24px; font-weight: bold;">0</div>
+        </div>
+        <div class="stat-card" style="border-left-color: #28a745;">
+            <div style="font-size: 12px; color: #888;">ĐÃ ĐIỂM DANH (FACE ID)</div>
+            <div id="stat-done" style="font-size: 24px; font-weight: bold; color: #28a745;">0</div>
+        </div>
+        <div class="stat-card" style="border-left-color: #ffc107;">
+            <div style="font-size: 12px; color: #888;">TỶ LỆ HOÀN THÀNH</div>
+            <div id="stat-percent" style="font-size: 24px; font-weight: bold; color: #ffc107;">0%</div>
+        </div>
+    </div>
+
+    <div class="tab-menu">
+        <button class="tab-btn active" onclick="switchTab('list')">📊 THEO DÕI ĐIỂM DANH</button>
+        <button class="tab-btn" onclick="switchTab('upload')">⚙️ NẠP DANH SÁCH MỚI</button>
+    </div>
+
+    <div id="tab-list" class="box">
+        <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
+            <h3 style="margin:0;">Chi tiết học viên</h3>
+            <button class="btn" style="background:#6c757d; font-size: 12px;" onclick="location.reload()">Làm mới dữ liệu</button>
+        </div>
+        <table id="mainTable">
             <thead>
                 <tr>
                     <th>STT</th>
-                    <th>Họ Tên</th>
+                    <th>Họ và Tên</th>
                     <th>Ngày sinh</th>
-                    <th>Đơn vị</th>
-                    <th>Thời gian quét</th>
-                    <th>Ảnh thẻ 3x4</th>
+                    <th>Đơn vị / Công ty</th>
+                    <th>Trạng thái</th>
+                    <th>Thời gian</th>
+                    <th>Ảnh Face ID</th>
                 </tr>
             </thead>
-            <tbody></tbody>
+            <tbody>
+                <tr><td colspan="7" style="text-align:center;">Đang tải dữ liệu...</td></tr>
+            </tbody>
         </table>
     </div>
+
+    <div id="tab-upload" class="box hidden">
+        <h3>CẬP NHẬT MASTER LIST</h3>
+        <p style="font-size: 13px; color: #d9534f;"><b>Chú ý:</b> Khi nạp danh sách mới, STT trùng sẽ bị ghi đè thông tin.</p>
+        <textarea id="csvData" placeholder="Dán 9 cột từ Excel (STT | Họ tên | Phái | Ngày sinh | Bậc | Chức danh | Đơn vị | Công ty | Hình thức)"></textarea>
+        <button class="btn" id="btnUpload" onclick="uploadList()">BẮT ĐẦU TẢI LÊN</button>
+    </div>
+
+    <footer style="text-align:center; padding: 20px; color: #999; font-size: 12px;">
+        Phát triển bởi <strong>Mr. An Toàn (Trần Công Đẹp)</strong> | © 2026 VDC Safety
+    </footer>
+</div>
 
 <script>
     const firebaseConfig = {
@@ -57,58 +114,107 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // 1. Chuyển đổi TAB
+    function switchTab(tab) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.box').forEach(b => b.classList.add('hidden'));
+        
+        if(tab === 'list') {
+            document.getElementById('tab-list').classList.remove('hidden');
+            document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
+        } else {
+            document.getElementById('tab-upload').classList.remove('hidden');
+            document.querySelector('.tab-btn:nth-child(2)').classList.add('active');
+        }
+    }
+
+    // 2. Nạp Master List (Chống đơ máy)
     async function uploadList() {
-        const txtArea = document.getElementById('csvData');
+        const raw = document.getElementById('csvData').value.trim();
         const btn = document.getElementById('btnUpload');
-        const raw = txtArea.value.trim();
-        if (!raw) return alert("Vui lòng dán dữ liệu Excel!");
+        if(!raw) return alert("Vui lòng dán dữ liệu!");
 
         const lines = raw.split('\n');
         btn.disabled = true;
         let count = 0;
 
-        try {
-            for (let line of lines) {
-                const c = line.split('\t');
-                if(c.length >= 2) {
-                    const stt = c[0].trim();
-                    await db.ref('master_list/' + stt).set({
-                        stt: stt, name: c[1]?.trim() || "", gender: c[2]?.trim() || "",
-                        dob: c[3]?.trim() || "", rank: c[4]?.trim() || "", position: c[5]?.trim() || "",
-                        department: c[6]?.trim() || "", company: c[7]?.trim() || "", type: c[8]?.trim() || ""
-                    });
-                    count++;
-                    btn.innerText = `⏳ ĐANG TẢI LÊN (${count}/${lines.length})...`;
-                }
+        for (let line of lines) {
+            const c = line.split('\t');
+            if(c.length >= 2) {
+                const stt = c[0].trim();
+                await db.ref('master_list/' + stt).set({
+                    stt: stt, name: c[1]?.trim() || "", gender: c[2]?.trim() || "",
+                    dob: c[3]?.trim() || "", rank: c[4]?.trim() || "", position: c[5]?.trim() || "",
+                    department: c[6]?.trim() || "", company: c[7]?.trim() || "", type: c[8]?.trim() || ""
+                });
+                count++;
+                btn.innerText = `⏳ ĐANG TẢI (${count}/${lines.length})...`;
             }
-            alert("Thành công! Đã nạp " + count + " học viên.");
-            txtArea.value = ""; 
-        } catch (e) {
-            alert("Lỗi kết nối Firebase!");
-        } finally {
-            btn.disabled = false;
-            btn.innerText = "CẬP NHẬT DANH SÁCH";
         }
+        alert("Nạp thành công " + count + " học viên!");
+        document.getElementById('csvData').value = "";
+        btn.disabled = false;
+        btn.innerText = "BẮT ĐẦU TẢI LÊN";
+        switchTab('list');
     }
 
-    db.ref('students').on('value', snap => {
-        const data = snap.val();
-        const tbody = document.querySelector('#listTable tbody');
+    // 3. Hiển thị danh sách tổng hợp (Master + Điểm danh)
+    async function refreshData() {
+        const masterSnap = await db.ref('master_list').once('value');
+        const doneSnap = await db.ref('students').once('value');
+        
+        const masterList = masterSnap.val() || {};
+        const doneList = doneSnap.val() || {};
+        
+        const tbody = document.querySelector('#mainTable tbody');
         tbody.innerHTML = '';
-        if(data) {
-            const list = Object.values(data);
-            document.getElementById('count').innerText = "✅ TỔNG CỘNG ĐÃ CÓ MẶT: " + list.length + " HỌC VIÊN";
-            list.forEach(u => {
-                tbody.innerHTML += `<tr>
-                    <td>${u.stt}</td><td><b>${u.name}</b></td><td>${u.dob}</td>
-                    <td>${u.department}</td><td>${u.time}</td>
-                    <td><img src="${u.photo}" width="60" height="80"></td>
-                </tr>`;
-            });
-        } else {
-            document.getElementById('count').innerText = "Chưa có học viên nào điểm danh.";
-        }
-    });
+        
+        let total = Object.keys(masterList).length;
+        let doneCount = 0;
+
+        // Chuyển object sang array và sắp xếp theo STT
+        const sortedKeys = Object.keys(masterList).sort((a, b) => parseInt(a) - parseInt(b));
+
+        sortedKeys.forEach(stt => {
+            const m = masterList[stt];
+            const d = doneList[stt]; // Kiểm tra xem STT này đã có trong danh sách điểm danh chưa
+            
+            let status = `<span class="status-badge bg-wait">Chờ quét mặt</span>`;
+            let photo = `<span style="color:#ccc;">Chưa có</span>`;
+            let time = "-";
+            let displayName = m.name;
+
+            if(d) {
+                status = `<span class="status-badge bg-success">Đã điểm danh</span>`;
+                photo = `<img src="${d.photo}" width="50" height="66" onclick="window.open(this.src)">`;
+                time = d.time || "-";
+                displayName = `<b>${d.name}</b>`; // Lấy tên từ bản ghi điểm danh (vì họ có thể sửa tên)
+                doneCount++;
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${stt}</td>
+                    <td>${displayName}</td>
+                    <td>${m.dob || ""}</td>
+                    <td><small>${m.department || ""}<br>${m.company || ""}</small></td>
+                    <td>${status}</td>
+                    <td><small>${time}</small></td>
+                    <td>${photo}</td>
+                </tr>
+            `;
+        });
+
+        // Cập nhật thống kê
+        document.getElementById('stat-total').innerText = total;
+        document.getElementById('stat-done').innerText = doneCount;
+        document.getElementById('stat-percent').innerText = total > 0 ? Math.round((doneCount/total)*100) + "%" : "0%";
+    }
+
+    // Tự động tải dữ liệu mỗi khi có thay đổi trên Firebase
+    db.ref('students').on('value', () => { refreshData(); });
+    db.ref('master_list').on('value', () => { refreshData(); });
+
 </script>
 </body>
 </html>
