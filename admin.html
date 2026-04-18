@@ -2,21 +2,21 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>VDC Admin v1.3.0 - Đa Lớp & Đa Cơ Sở</title>
+    <title>VDC Admin v1.3.1 - Quản lý Đào tạo</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <style>
         :root { --primary: #007bff; --success: #28a745; --dark: #343a40; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background: #f4f7f6; }
         .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .config-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; background: #e9ecef; padding: 15px; border-radius: 10px; margin-bottom: 20px; }
+        .config-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; background: #e9ecef; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #dee2e6; }
         select, input, textarea { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; box-sizing: border-box; }
         .nav-tabs { display: flex; gap: 10px; margin-bottom: 15px; }
         .nav-link { padding: 10px 20px; border: none; background: #ddd; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .nav-link.active { background: var(--primary); color: white; }
         table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
         th, td { border: 1px solid #eee; padding: 10px; font-size: 12px; text-align: left; }
-        th { background: #f8f9fa; color: #555; }
+        th { background: #f8f9fa; color: #555; text-transform: uppercase; font-size: 11px; }
         .hidden { display: none; }
         .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
     </style>
@@ -24,22 +24,22 @@
 <body>
 
 <div style="max-width: 1300px; margin: auto;">
-    <h2 style="color:var(--primary); margin-bottom: 5px;">VDC MANAGEMENT SYSTEM v1.3.0</h2>
+    <h2 style="color:var(--primary); margin-bottom: 5px;">VDC MANAGEMENT SYSTEM v1.3.1</h2>
     
     <div class="box" style="border-top: 5px solid var(--primary);">
-        <h3 style="margin-top:0;">⚙️ THIẾT LẬP PHIÊN ĐIỂM DANH</h3>
+        <h3 style="margin-top:0;">⚙️ THIẾT LẬP PHIÊN ĐIỂM DANH HIỆN TẠI</h3>
         <div class="config-bar">
             <div>
-                <label style="font-size:11px; font-weight:bold;">CHỌN ĐỊA ĐIỂM:</label>
-                <select id="cfg-location" onchange="updateFilters()"></select>
+                <label style="font-size:11px; font-weight:bold;">ĐỊA ĐIỂM (Cột 9):</label>
+                <select id="cfg-location" onchange="loadClasses()"></select>
             </div>
             <div>
-                <label style="font-size:11px; font-weight:bold;">CHỌN LỚP:</label>
-                <select id="cfg-class" onchange="updateFilters()"></select>
+                <label style="font-size:11px; font-weight:bold;">LỚP (Cột 10):</label>
+                <select id="cfg-class" onchange="saveSession()"></select>
             </div>
             <div>
                 <label style="font-size:11px; font-weight:bold;">NGÀY HỌC:</label>
-                <input type="date" id="cfg-date" onchange="saveSession()">
+                <input type="text" id="cfg-date" placeholder="dd/mm/yyyy" onchange="saveSession()">
             </div>
             <div>
                 <label style="font-size:11px; font-weight:bold;">BUỔI HỌC:</label>
@@ -50,12 +50,11 @@
                 </select>
             </div>
         </div>
-        <p style="font-size:12px; color:blue; margin:0;">* Lưu ý: Học viên khi quét mặt sẽ được ghi nhận vào phiên này.</p>
     </div>
 
     <div class="nav-tabs">
-        <button class="nav-link active" onclick="switchTab('tab-report')">📊 BÁO CÁO ĐIỂM DANH</button>
-        <button class="nav-link" onclick="switchTab('tab-upload')">📥 NẠP DANH SÁCH TỔNG</button>
+        <button class="nav-link active" onclick="switchTab('tab-report')">📊 BÁO CÁO</button>
+        <button class="nav-link" onclick="switchTab('tab-upload')">📥 NẠP DANH SÁCH</button>
     </div>
 
     <div id="tab-report" class="box">
@@ -63,13 +62,7 @@
         <table id="tbl-report">
             <thead>
                 <tr>
-                    <th>STT</th>
-                    <th>Họ Tên</th>
-                    <th>Đơn vị</th>
-                    <th>Trạng thái</th>
-                    <th>Ảnh Face ID</th>
-                    <th>Thời gian ghi nhận</th>
-                    <th>Thao tác</th>
+                    <th>STT</th><th>Họ Tên</th><th>Đơn vị</th><th>Trạng thái</th><th>Ảnh</th><th>Thời gian</th><th>Thao tác</th>
                 </tr>
             </thead>
             <tbody></tbody>
@@ -77,10 +70,9 @@
     </div>
 
     <div id="tab-upload" class="box hidden">
-        <h3>Nạp Danh Sách Tổng (Từ Excel)</h3>
-        <p style="font-size:12px;">Yêu cầu dán đủ các cột: STT | Họ tên | Phái | Ngày sinh | Bậc | Chức danh | Đơn vị | Công ty | Hình thức | Địa điểm | Lớp</p>
-        <textarea id="csvData" placeholder="Copy từ Excel dán vào đây..."></textarea>
-        <button class="btn" style="background:var(--primary);" id="btnUpload" onclick="uploadData()">TẢI LÊN MASTER LIST</button>
+        <h3>Nạp Master List (11 cột)</h3>
+        <textarea id="csvData" placeholder="Dán dữ liệu Excel..."></textarea>
+        <button class="btn" style="background:var(--primary);" id="btnUpload" onclick="uploadData()">TẢI LÊN</button>
     </div>
 </div>
 
@@ -104,7 +96,6 @@
         event.currentTarget.classList.add('active');
     }
 
-    // 1. Nạp danh sách tổng và tự phân loại Địa điểm/Lớp
     async function uploadData() {
         const txt = document.getElementById('csvData').value.trim();
         const lines = txt.split('\n');
@@ -115,14 +106,13 @@
             const c = line.split('\t');
             if(c.length >= 11) {
                 const stt = c[0].trim();
-                const loc = c[9].trim();
-                const cls = c[10].trim();
-                const student = {
+                const loc = c[9].trim(); // Cột 9 Địa điểm
+                const cls = c[10].trim(); // Cột 10 Lớp
+                await db.ref(`master_list/${loc}/${cls}/${stt}`).set({
                     stt, name: c[1], gender: c[2], dob: c[3], rank: c[4], 
                     position: c[5], department: c[6], company: c[7], type: c[8],
                     location: loc, class: cls
-                };
-                await db.ref(`master_list/${loc}/${cls}/${stt}`).set(student);
+                });
                 count++;
                 btn.innerText = `Đang nạp: ${count}`;
             }
@@ -130,74 +120,64 @@
         alert("Nạp thành công!"); location.reload();
     }
 
-    // 2. Lưu thiết lập buổi học lên Firebase để trang diemdanh đọc được
     function saveSession() {
         const session = {
             location: document.getElementById('cfg-location').value,
             class: document.getElementById('cfg-class').value,
-            date: document.getElementById('cfg-date').value,
+            date: document.getElementById('cfg-date').value.replace(/\//g, '-'),
             session: document.getElementById('cfg-session').value
         };
         db.ref('current_session').set(session);
     }
 
-    // 3. Lắng nghe và hiển thị dữ liệu
+    async function loadClasses() {
+        const loc = document.getElementById('cfg-location').value;
+        const snap = await db.ref(`master_list/${loc}`).once('value');
+        const classes = snap.val() || {};
+        const clsSelect = document.getElementById('cfg-class');
+        clsSelect.innerHTML = Object.keys(classes).map(c => `<option value="${c}">${c}</option>`).join('');
+        saveSession();
+    }
+
     function init() {
-        // Mặc định ngày hôm nay
-        document.getElementById('cfg-date').valueAsDate = new Date();
+        // Thiết lập ngày mặc định dd/MM/yyyy
+        const now = new Date();
+        document.getElementById('cfg-date').value = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
 
         db.ref().on('value', snap => {
             const data = snap.val() || {};
             const master = data.master_list || {};
             const sessionInfo = data.current_session || {};
             
-            // Cập nhật Listbox lọc
             const locSelect = document.getElementById('cfg-location');
-            const clsSelect = document.getElementById('cfg-class');
-            const curLoc = sessionInfo.location || "";
-            const curCls = sessionInfo.class || "";
-
-            if(Object.keys(master).length > 0 && locSelect.options.length <= 1) {
-                locSelect.innerHTML = Object.keys(master).map(l => `<option value="${l}" ${l==curLoc?'selected':''}>${l}</option>`).join('');
-                updateFilters();
+            if(Object.keys(master).length > 0 && locSelect.options.length === 0) {
+                locSelect.innerHTML = Object.keys(master).map(l => `<option value="${l}">${l}</option>`).join('');
+                loadClasses();
             }
 
-            // Hiển thị báo cáo theo lọc
             const loc = locSelect.value;
-            const cls = clsSelect.value;
-            const studentsInCls = (master[loc] && master[loc][cls]) ? master[loc][cls] : {};
+            const cls = document.getElementById('cfg-class').value;
+            const students = (master[loc] && master[loc][cls]) ? master[loc][cls] : {};
             const attendance = data.attendance || {};
-            const dateKey = sessionInfo.date;
-            const sessKey = sessionInfo.session;
+            const dateKey = sessionInfo.date || "";
+            const sessKey = sessionInfo.session || "";
 
             const tbody = document.querySelector('#tbl-report tbody');
             tbody.innerHTML = '';
-            let countDone = 0;
-
-            Object.values(studentsInCls).forEach(s => {
+            let done = 0;
+            Object.values(students).sort((a,b)=>parseInt(a.stt)-parseInt(b.stt)).forEach(s => {
                 const record = (attendance[dateKey] && attendance[dateKey][sessKey]) ? attendance[dateKey][sessKey][s.stt] : null;
-                if(record) countDone++;
-
+                if(record) done++;
                 tbody.innerHTML += `<tr>
                     <td>${s.stt}</td><td><b>${s.name}</b></td><td>${s.department}</td>
-                    <td>${record ? '<span style="color:green">✅ Đã mặt</span>' : '<span style="color:gray">⏳ Vắng</span>'}</td>
-                    <td>${record ? `<img src="${record.photo}" width="40">` : '-'}</td>
-                    <td>${record ? record.time : '-'}</td>
-                    <td><button class="btn" style="background:red; font-size:10px;" onclick="db.ref('attendance/${dateKey}/${sessKey}/${s.stt}').remove()">Xóa</button></td>
+                    <td>${record ? '✅' : '⏳'}</td><td>${record ? `<img src="${record.photo}" width="40">`:''}</td>
+                    <td>${record ? record.time : ''}</td>
+                    <td><button onclick="db.ref('attendance/${dateKey}/${sessKey}/${s.stt}').remove()">Xóa</button></td>
                 </tr>`;
             });
-            document.getElementById('stats').innerText = `Sĩ số: ${countDone}/${Object.keys(studentsInCls).length}`;
+            document.getElementById('stats').innerText = `Sĩ số: ${done}/${Object.keys(students).length}`;
         });
     }
-
-    function updateFilters() {
-        db.ref('master_list/' + document.getElementById('cfg-location').value).once('value', snap => {
-            const classes = snap.val() || {};
-            document.getElementById('cfg-class').innerHTML = Object.keys(classes).map(c => `<option value="${c}">${c}</option>`).join('');
-            saveSession();
-        });
-    }
-
     init();
 </script>
 </body>
