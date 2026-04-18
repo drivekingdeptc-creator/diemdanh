@@ -3,45 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HEPC AI - VDC SAFETY v1.2.0</title>
+    <title>HEPC AI - VDC SAFETY v1.2.1</title>
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <style>
         :root { --primary: #004085; --success: #155724; --accent: #0056b3; --bg: #e9ecef; }
-        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
-        .app-container { max-width: 480px; width: 100%; background: white; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); padding: 25px; text-align: center; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; }
+        .app-container { max-width: 420px; width: 100%; background: white; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.15); padding: 20px; text-align: center; box-sizing: border-box; }
         
-        /* Cân đối khung quét */
-        #video-container { position: relative; width: 280px; height: 373px; margin: 15px auto; background: #000; border-radius: 20px; overflow: hidden; border: 5px solid #fff; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        /* CÂN ĐỐI LẠI KHUNG QUÉT NHỎ GỌN */
+        #video-container { 
+            position: relative; 
+            width: 260px; /* Thu nhỏ bề ngang để cân đối điện thoại */
+            height: 347px; /* Tỷ lệ 3:4 chuẩn */
+            margin: 10px auto; 
+            background: #000; 
+            border-radius: 18px; 
+            overflow: hidden; 
+            border: 4px solid #fff; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2); 
+        }
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         canvas { position: absolute; top: 0; left: 0; transform: scaleX(-1); }
-        .face-guide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.7) 85%); pointer-events: none; }
+        
+        /* KHÔI PHỤC HÌNH BẦU DỤC (OVAL GUIDE) */
+        .face-guide { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.7) 80%); 
+            pointer-events: none; 
+        }
+        .face-guide::after {
+            content: ''; position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
+            width: 65%; height: 70%; border: 2px dashed rgba(255,255,255,0.5);
+            border-radius: 50% 50% 45% 45%;
+        }
         
         .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; text-transform: uppercase; transition: 0.3s; }
-        #btnCapture { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(0,64,133,0.3); }
+        #btnCapture { background: var(--primary); color: white; }
         input, select { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ced4da; font-size: 15px; box-sizing: border-box; }
         
-        .form-verify { display: none; margin-top: 20px; text-align: left; background: #fff3cd; padding: 20px; border-radius: 15px; border: 1px solid #ffeeba; }
+        .form-verify { display: none; margin-top: 15px; text-align: left; background: #fff3cd; padding: 18px; border-radius: 15px; border: 1px solid #ffeeba; }
         .input-group label { display: block; font-size: 11px; font-weight: bold; color: #495057; text-transform: uppercase; margin-bottom: 4px; }
         
-        /* Thẻ kết quả 3x4 chuyên nghiệp */
-        .result-card { display: none; background: #fff; border-radius: 20px; padding: 0; margin-top: 5px; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #res-photo { width: 165px; height: 220px; object-fit: cover; border-radius: 10px; border: 5px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin: 10px 0; }
-        .res-info-container { text-align: center; padding: 20px; background: #f8f9fa; border-radius: 0 0 20px 20px; border-top: 1px solid #eee; }
-        .res-row { margin: 8px 0; font-size: 16px; color: #212529; border-bottom: 1px dashed #dee2e6; padding-bottom: 5px; }
+        /* Kết quả */
+        .result-card { display: none; background: #fff; border-radius: 20px; padding: 0; margin-top: 5px; animation: popIn 0.4s ease; }
+        #res-photo { width: 150px; height: 200px; object-fit: cover; border-radius: 10px; border: 4px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin: 15px 0; }
+        .res-info-container { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 0 0 20px 20px; border-top: 1px solid #eee; }
+        .res-row { margin: 6px 0; font-size: 15px; color: #212529; border-bottom: 1px dashed #dee2e6; padding-bottom: 4px; }
         .res-row strong { color: var(--primary); }
-        .res-time { color: var(--success); font-weight: bold; font-size: 14px; margin-top: 15px; padding: 10px; background: #d4edda; border-radius: 8px; }
+        .res-time { color: var(--success); font-weight: bold; font-size: 13px; margin-top: 12px; padding: 10px; background: #d4edda; border-radius: 8px; line-height: 1.4; }
 
-        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        footer { margin-top: 20px; font-size: 11px; color: #6c757d; text-align: center; letter-spacing: 0.5px; }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        footer { margin-top: 15px; font-size: 10px; color: #6c757d; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="app-container">
     <h3 style="margin:0; color: var(--primary); letter-spacing: 1px;">HEPC SAFETY AI</h3>
-    <p id="loading-msg" style="font-size:12px; color:#dc3545; margin: 10px 0; font-weight:bold;">⌛ HỆ THỐNG ĐANG KHỞI TẠO AI...</p>
+    <p id="loading-msg" style="font-size:11px; color:#dc3545; margin: 10px 0; font-weight:bold;">⌛ KHỞI TẠO HỆ THỐNG...</p>
 
     <div id="scanner-section">
         <div id="video-container">
@@ -49,12 +70,12 @@
             <canvas id="overlay"></canvas>
             <div class="face-guide"></div>
         </div>
-        <p id="scan-status" style="font-size:14px; font-weight:bold; color: #495057;">Đang tìm khuôn mặt...</p>
+        <p id="scan-status" style="font-size:14px; font-weight:bold; color: #495057; margin: 5px 0;">Đang tìm khuôn mặt...</p>
         <button class="btn" id="btnCapture" onclick="checkFace()" disabled>XÁC NHẬN KHUÔN MẶT</button>
     </div>
 
-    <div id="search-section" style="display:none; margin-top:15px; border-top: 1px solid #eee; padding-top: 20px;">
-        <p style="color:#dc3545; font-weight:bold;">⚠️ KHÔNG TÌM THẤY DỮ LIỆU MẶT</p>
+    <div id="search-section" style="display:none; margin-top:15px; border-top: 1px solid #eee; padding-top: 15px;">
+        <p style="color:#dc3545; font-weight:bold; font-size: 14px;">⚠️ CHƯA CÓ DỮ LIỆU MẶT</p>
         <input type="text" id="inputName" placeholder="Nhập đầy đủ Họ và Tên">
         <button class="btn" style="background:#495057; color:white;" onclick="searchStudent()">TÌM THÔNG TIN HỌC VIÊN</button>
     </div>
@@ -66,7 +87,6 @@
         <div class="input-group"><label>Bậc an toàn *:</label><select id="c5"><option value="5/5">5/5</option><option value="4/5">4/5</option><option value="3/5">3/5</option><option value="2/5">2/5</option><option value="1/5">1/5</option></select></div>
         <div class="input-group"><label>Chức danh *:</label><input type="text" id="c6"></div>
         <div class="input-group"><label>Đơn vị công tác *:</label><input type="text" id="c7"></div>
-        <div class="input-group"><label>Công ty:</label><input type="text" id="c8" disabled style="background:#eee;"></div>
         
         <button class="btn" style="background:var(--success); color:white;" onclick="saveFinal()">XÁC NHẬN THÔNG TIN</button>
         <button class="btn" style="background:#adb5bd; color:white; font-size:12px;" onclick="location.reload()">QUAY LẠI</button>
@@ -80,12 +100,12 @@
             <div class="res-row">Đơn vị: <strong id="res-unit"></strong></div>
             <div class="res-row">Chức danh: <strong id="res-pos"></strong></div>
             <div id="res-time" class="res-time"></div>
-            <button class="btn" style="background:#007bff; color:white; margin-top:20px;" onclick="location.reload()">TIẾP TỤC QUÉT</button>
+            <button class="btn" style="background:#007bff; color:white; margin-top:15px;" onclick="location.reload()">TIẾP TỤC QUÉT</button>
         </div>
     </div>
 </div>
 
-<footer>Phát triển bởi <strong>Mr. An Toàn (Trần Công Đẹp)</strong> | Version 1.2.0</footer>
+<footer>Phát triển bởi <strong>Mr. An Toàn (Trần Công Đẹp)</strong> | Version 1.2.1</footer>
 
 <script>
     const firebaseConfig = {
@@ -121,20 +141,20 @@
             isDetecting = true;
             document.getElementById('video').onplay = () => {
                 const canvas = document.getElementById('overlay');
-                faceapi.matchDimensions(canvas, { width: 280, height: 373 });
+                faceapi.matchDimensions(canvas, { width: 260, height: 347 });
                 setInterval(async () => {
                     if(!isDetecting) return;
                     const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
                     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
                     if(det) {
-                        faceapi.draw.drawDetections(canvas, faceapi.resizeResults(det, { width: 280, height: 373 }));
+                        faceapi.draw.drawDetections(canvas, faceapi.resizeResults(det, { width: 260, height: 347 }));
                         lastDescriptor = det.descriptor;
                         document.getElementById('btnCapture').disabled = false;
                         document.getElementById('scan-status').innerText = "✅ SẴN SÀNG";
                     }
                 }, 500);
             };
-        } catch (e) { alert("Lỗi mở Camera!"); }
+        } catch (e) { alert("Lỗi Camera!"); }
     }
 
     async function loadFaceDB() {
@@ -162,6 +182,7 @@
 
     async function searchStudent() {
         const inputName = document.getElementById('inputName').value.trim().toLowerCase();
+        if(!inputName) return alert("Vui lòng nhập tên!");
         const snap = await db.ref('master_list').once('value');
         const all = snap.val();
         let found = null;
@@ -174,15 +195,14 @@
             document.getElementById('c3').value = found.gender || "Nam";
             document.getElementById('c6').value = found.position || "";
             document.getElementById('c7').value = found.department || "";
-            document.getElementById('c8').value = found.company || "";
-        } else { alert("Không tìm thấy tên học viên!"); }
+        } else { alert("Không tìm thấy tên!"); }
     }
 
     async function saveFinal() {
         const v4 = document.getElementById('c4').value;
         const v6 = document.getElementById('c6').value.trim();
         const v7 = document.getElementById('c7').value.trim();
-        if(!v4 || !v6 || !v7) return alert("Vui lòng điền đủ thông tin có dấu (*)");
+        if(!v4 || !v6 || !v7) return alert("Vui lòng điền đủ thông tin (*)");
 
         const video = document.getElementById('video');
         const snap = document.createElement('canvas');
@@ -201,7 +221,6 @@
             rank: document.getElementById('c5').value,
             position: v6,
             department: v7,
-            company: document.getElementById('c8').value,
             photo: snap.toDataURL('image/jpeg', 0.8),
             descriptor: Array.from(lastDescriptor),
             time: new Date().getHours().toString().padStart(2,'0') + ":" + new Date().getMinutes().toString().padStart(2,'0') + " ngày " + new Date().toLocaleDateString('vi-VN')
@@ -218,10 +237,10 @@
         
         document.getElementById('res-stt').innerText = user.stt;
         document.getElementById('res-name').innerText = user.name.toUpperCase();
-        document.getElementById('res-unit').innerText = user.department || user.company;
+        document.getElementById('res-unit').innerText = user.department;
         document.getElementById('res-pos').innerText = user.position || "-";
         document.getElementById('res-photo').src = user.photo;
-        document.getElementById('res-time').innerText = "Anh/Chị đã điểm danh lúc: " + user.time;
+        document.getElementById('res-time').innerText = "Anh/Chị đã điểm danh lúc:\n" + user.time;
         
         document.getElementById('result-screen').style.display = 'block';
     }
