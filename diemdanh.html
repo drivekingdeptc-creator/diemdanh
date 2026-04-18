@@ -1,225 +1,66 @@
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HEPC - VDC Face ID v1.0.9</title>
-    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
+<div id="verify-section" class="form-verify" style="display:none; text-align: left; background: #fff3cd; padding: 15px; border-radius: 12px; border: 1px solid #ffeeba; margin-top: 15px;">
+    
+    <p style="font-size: 13px; color: #856404; line-height: 1.5; margin-bottom: 12px; font-style: italic;">
+        <strong>Lưu ý:</strong> Để phục vụ cho công tác làm chứng chỉ đào tạo cuối khóa, kính đề nghị các anh/chị học viên <strong>KIỂM TRA</strong> và <strong>ĐIỀN</strong> đầy đủ các thông tin bên dưới. Trân trọng cảm ơn!
+    </p>
 
-    <style>
-        :root { --primary: #0056b3; --success: #28a745; --bg: #f0f2f5; --warning: #fff3cd; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .app-container { max-width: 420px; width: 100%; background: white; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 25px; text-align: center; box-sizing: border-box; }
-        
-        #video-container { position: relative; width: 240px; height: 320px; margin: 15px auto; background: #000; border-radius: 15px; overflow: hidden; border: 4px solid var(--primary); }
-        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        canvas { position: absolute; top: 0; left: 0; transform: scaleX(-1); }
-        
-        .face-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; height: 75%; border: 2px dashed rgba(255,255,255,0.4); border-radius: 50% 50% 45% 45%; pointer-events: none; }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; transition: 0.2s; }
-        #btnCapture { background: var(--primary); color: white; }
-        input { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
-        
-        .form-verify { display: none; margin-top: 15px; text-align: left; background: var(--warning); padding: 15px; border-radius: 12px; border: 1px solid #ffeeba; }
-        .result-card { display: none; background: #fff; border: 3px solid var(--success); border-radius: 20px; padding: 25px; margin-top: 10px; animation: slideUp 0.4s ease; }
-        #res-photo { width: 180px; height: 240px; object-fit: cover; border-radius: 12px; border: 4px solid #f0f0f0; margin-bottom: 15px; }
-        
-        footer { margin-top: auto; padding: 20px 10px; font-size: 11px; color: #888; text-align: center; }
-        .version-tag { background: #ddd; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    </style>
-</head>
-<body>
-
-<div class="app-container">
-    <h3 style="margin:0; color: var(--primary);">HEPC SAFETY AI</h3>
-    <p id="loading-msg" style="font-size:12px; color:red; margin: 10px 0; font-weight:bold;">⌛ Hệ thống đang khởi động AI...</p>
-
-    <div id="scanner-section">
-        <div id="video-container">
-            <video id="video" autoplay muted playsinline></video>
-            <canvas id="overlay"></canvas>
-            <div class="face-guide"></div>
+    <div id="info-display" style="font-size: 13px; background: rgba(255,255,255,0.5); padding: 10px; border-radius: 8px; margin-bottom: 10px; line-height: 1.6;">
         </div>
-        <p id="scan-status" style="font-size:14px; font-weight:bold; min-height: 20px;">Vui lòng đợi giây lát...</p>
-        <button class="btn" id="btnCapture" onclick="checkFace()" disabled>XÁC NHẬN KHUÔN MẶT</button>
-    </div>
 
-    <div id="search-section" style="display:none; margin-top:15px; border-top: 2px dashed #eee; padding-top: 15px;">
-        <p style="color:#d9534f; font-size:14px; font-weight:bold;">⚠️ KHÔNG TÌM THẤY DỮ LIỆU KHUÔN MẶT</p>
-        <input type="number" id="inputSTT" placeholder="Nhập Số Thứ Tự (STT) của bạn">
-        <button class="btn" style="background:#555; color:white;" onclick="searchStudent()">TÌM THÔNG TIN ĐỂ ĐĂNG KÝ</button>
-    </div>
-
-    <div id="verify-section" class="form-verify">
-        <p style="font-size: 13px; color: #856404; line-height: 1.5; margin-bottom: 12px; font-style: italic;">
-            <strong>Lưu ý:</strong> Để phục vụ cho công tác làm chứng chỉ đào tạo cuối khóa, kính đề nghị các anh/chị học viên <strong>KIỂM TRA</strong> và <strong>ĐIỀN</strong> đầy đủ các thông tin bên dưới. Trân trọng cảm ơn!
-        </p>
-        <label style="font-size: 11px; font-weight: bold; color: var(--primary);">HỌ VÀ TÊN (KIỂM TRA & SỬA NẾU SAI):</label>
-        <input type="text" id="editName">
-        <button class="btn" style="background:var(--success); color:white;" onclick="saveFinal()">XÁC NHẬN ĐIỂM DANH</button>
-    </div>
-
-    <div id="result-screen" class="result-card">
-        <img id="res-photo" src="">
-        <h2 id="res-name" style="margin:0; font-size:22px;"></h2>
-        <p id="res-stt" style="margin:5px 0; color:#555; font-size: 18px; font-weight:bold;"></p>
-        <div style="color:var(--success); font-weight:bold; margin-top:15px; font-size: 18px;">✅ ĐÃ GHI NHẬN HỆ THỐNG</div>
-        <button class="btn" style="background:#f0f0f0; color:#333; margin-top: 20px;" onclick="location.reload()">TIẾP TỤC QUÉT</button>
-    </div>
+    <label style="font-size: 11px; font-weight: bold; color: var(--primary);">HỌ VÀ TÊN (KIỂM TRA & SỬA NẾU SAI):</label>
+    <input type="text" id="editName">
+    
+    <button class="btn" style="background:var(--success); color:white;" onclick="saveFinal()">XÁC NHẬN ĐIỂM DANH</button>
 </div>
 
-<footer>
-    <div>Hệ thống điểm danh thông minh VDC - HEPC</div>
-    <div>Phiên bản: <span class="version-tag">v1.0.9-stable</span> • 18/04/2026</div>
-    <div>Phát triển bởi <strong>Mr. An Toàn (Trần Công Đẹp)</strong></div>
-</footer>
-
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
-        authDomain: "hepc-ed95d.firebaseapp.com",
-        databaseURL: "https://hepc-ed95d-default-rtdb.firebaseio.com",
-        projectId: "hepc-ed95d",
-        storageBucket: "hepc-ed95d.firebasestorage.app",
-        messagingSenderId: "536861347284",
-        appId: "1:536861347284:web:61d162705878577f741a41"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let lastDescriptor = null, isDetecting = false, faceMatcher = null;
-
-    // Tải Model AI tuần tự để tránh treo
-    async function initAI() {
-        const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-        try {
-            document.getElementById('loading-msg').innerText = "⌛ Đang tải mô hình nhận diện (1/3)...";
-            await faceapi.nets.tinyFaceDetector.loadFromUri(URL);
-            document.getElementById('loading-msg').innerText = "⌛ Đang tải mô hình điểm chốt (2/3)...";
-            await faceapi.nets.faceLandmark68Net.loadFromUri(URL);
-            document.getElementById('loading-msg').innerText = "⌛ Đang tải mô hình trích xuất (3/3)...";
-            await faceapi.nets.faceRecognitionNet.loadFromUri(URL);
-            
-            document.getElementById('loading-msg').style.display = 'none';
-            startCamera();
-            loadFaceDB();
-        } catch (e) {
-            document.getElementById('loading-msg').innerText = "❌ Lỗi tải AI. Vui lòng F5 hoặc kiểm tra 4G!";
-        }
-    }
-
-    async function startCamera() {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-            document.getElementById('video').srcObject = stream;
-            isDetecting = true;
-            document.getElementById('video').onplay = () => {
-                const canvas = document.getElementById('overlay');
-                faceapi.matchDimensions(canvas, { width: 240, height: 320 });
-                setInterval(async () => {
-                    if(!isDetecting) return;
-                    const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.2 }))
-                                             .withFaceLandmarks().withFaceDescriptor();
-                    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-                    if(det) {
-                        faceapi.draw.drawDetections(canvas, faceapi.resizeResults(det, { width: 240, height: 320 }));
-                        lastDescriptor = det.descriptor;
-                        document.getElementById('btnCapture').disabled = false;
-                        document.getElementById('scan-status').innerText = "✅ SẴN SÀNG XÁC NHẬN";
-                        document.getElementById('scan-status').style.color = "green";
-                    } else {
-                        document.getElementById('btnCapture').disabled = true;
-                        document.getElementById('scan-status').innerText = "🔍 Đang tìm khuôn mặt...";
-                        document.getElementById('scan-status').style.color = "#555";
-                    }
-                }, 500);
-            };
-        } catch (e) { alert("Không thể mở Camera!"); }
-    }
-
-    async function loadFaceDB() {
-        const snap = await db.ref('students').once('value');
-        const data = snap.val();
-        if(data) {
-            const labeled = Object.values(data).filter(u => u.descriptor).map(u => 
-                new faceapi.LabeledFaceDescriptors(u.stt.toString(), [new Float32Array(u.descriptor)])
-            );
-            if(labeled.length > 0) faceMatcher = new faceapi.FaceMatcher(labeled, 0.55);
-        }
-    }
-
-    async function checkFace() {
-        if(faceMatcher && lastDescriptor) {
-            const match = faceMatcher.findBestMatch(lastDescriptor);
-            if(match.label !== 'unknown') {
-                const snap = await db.ref('students/' + match.label).once('value');
-                return showResult(snap.val());
-            }
-        }
-        document.getElementById('scanner-section').style.display = 'none';
-        document.getElementById('search-section').style.display = 'block';
-    }
-
+    // Cập nhật hàm searchStudent để hiển thị chi tiết
     async function searchStudent() {
         const stt = document.getElementById('inputSTT').value;
-        if(!stt) return alert("Vui lòng nhập STT!");
-        
         const snap = await db.ref('master_list/' + stt).once('value');
-        const student = snap.val();
-        if(student) {
+        const s = snap.val();
+        
+        if(s) {
             document.getElementById('search-section').style.display = 'none';
             document.getElementById('verify-section').style.display = 'block';
-            document.getElementById('editName').value = student.name;
+            
+            // Hiển thị các thông tin từ danh sách của anh để học viên đối soát
+            document.getElementById('info-display').innerHTML = `
+                <b>Ngày sinh:</b> ${s.dob || '...'} <br>
+                <b>Đơn vị:</b> ${s.department || '...'} <br>
+                <b>Công ty:</b> ${s.company || '...'} <br>
+                <b>Chức danh:</b> ${s.position || '...'}
+            `;
+            document.getElementById('editName').value = s.name;
+            
+            // Lưu tạm các thông tin khác để khi ghi vào 'students' không bị mất
+            window.currentStudentData = s; 
         } else {
-            alert("Không tìm thấy STT " + stt + " trong danh sách lớp!");
+            alert("Không tìm thấy STT " + stt + " trong danh sách!");
         }
     }
 
+    // Cập nhật hàm saveFinal để lưu đầy đủ các cột
     async function saveFinal() {
-        const stt = document.getElementById('inputSTT').value;
         const name = document.getElementById('editName').value;
-        if(!name) return alert("Vui lòng kiểm tra lại tên!");
-
         const video = document.getElementById('video');
         const snap = document.createElement('canvas');
         snap.width = 450; snap.height = 600;
-        
-        // Cắt ảnh 3x4 từ tâm
         const ctx = snap.getContext('2d');
         const vW = video.videoWidth, vH = video.videoHeight;
-        const sW = vH * (450/600), sx = (vW - sW) / 2;
+        const sW = vH * (0.75), sx = (vW - sW) / 2;
         ctx.drawImage(video, sx, 0, sW, vH, 0, 0, 450, 600);
 
-        const userData = {
-            stt: stt,
+        // Hợp nhất dữ liệu gốc và dữ liệu mới
+        const finalData = {
+            ...window.currentStudentData, // Lấy lại các cột dob, position, company...
             name: name,
             descriptor: Array.from(lastDescriptor),
             photo: snap.toDataURL('image/jpeg', 0.8),
-            time: new Date().toLocaleString('vi-VN')
+            checkinTime: new Date().toLocaleString('vi-VN')
         };
-        await db.ref('students/' + stt).set(userData);
-        showResult(userData);
+
+        await db.ref('students/' + finalData.stt).set(finalData);
+        showResult(finalData);
     }
-
-    function showResult(user) {
-        isDetecting = false;
-        const video = document.getElementById('video');
-        if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
-
-        document.getElementById('scanner-section').style.display = 'none';
-        document.getElementById('search-section').style.display = 'none';
-        document.getElementById('verify-section').style.display = 'none';
-        
-        document.getElementById('res-name').innerText = user.name.toUpperCase();
-        document.getElementById('res-stt').innerText = "STT: " + user.stt;
-        document.getElementById('res-photo').src = user.photo;
-        document.getElementById('result-screen').style.display = 'block';
-    }
-
-    initAI();
 </script>
-</body>
-</html>
