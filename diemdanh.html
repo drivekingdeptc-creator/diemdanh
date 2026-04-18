@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HEPC - VDC Face ID v1.0.6</title>
+    <title>HEPC - VDC Face ID v1.0.7</title>
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
@@ -23,18 +23,18 @@
         
         .face-guide {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 75%; height: 75%; border: 2px dashed rgba(255,255,255,0.4);
+            width: 80%; height: 80%; border: 2px dashed rgba(255,255,255,0.5);
             border-radius: 50% 50% 45% 45%; pointer-events: none;
         }
 
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; transition: 0.2s; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; transition: 0.2s; text-transform: uppercase; }
         #btnCapture { background: var(--primary); color: white; }
         #btnSubmitReg { background: var(--success); color: white; display: none; }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
 
         .form-reg { display: none; margin-top: 15px; padding-top: 15px; border-top: 2px dashed #eee; }
         input { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
-        input:focus { border-color: var(--primary); }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 5px rgba(0,86,179,0.2); }
         
         /* Thẻ kết quả ảnh thẻ 3x4 */
         .result-card { display: none; background: #fff; border: 3px solid var(--success); border-radius: 20px; padding: 25px; margin-top: 10px; animation: slideUp 0.4s ease-out; }
@@ -73,18 +73,18 @@
         <h2 id="res-name" style="margin:0; font-size:22px; color: #1a1a1a;"></h2>
         <p id="res-stt" style="margin:5px 0; color:#555; font-size: 18px; font-weight:bold;"></p>
         <div style="color:var(--success); font-weight:bold; margin-top:15px; font-size: 18px;">✅ ĐÃ GHI NHẬN HỆ THỐNG</div>
-        <button class="btn" style="background:#f0f0f0; color:#333; margin-top: 20px;" onclick="location.reload()">TIẾP TỤC QUÉT</button>
+        <button class="btn" style="background:#f0f0f0; color:#333; margin-top: 20px; text-transform: none;" onclick="location.reload()">TIẾP TỤC QUÉT</button>
     </div>
 </div>
 
 <footer>
     <div>Hệ thống điểm danh thông minh VDC - HEPC</div>
-    <div>Phiên bản: <span class="version-tag">v1.0.6-stable</span> • Cập nhật: 18/04/2026</div>
+    <div>Phiên bản: <span class="version-tag">v1.0.7-stable</span> • Cập nhật: 18/04/2026</div>
     <div>Phát triển bởi <strong>Mr. An Toàn (Trần Công Đẹp)</strong></div>
 </footer>
 
 <script>
-    // --- FIREBASE CONFIG HEPC ---
+    // --- FIREBASE CONFIG HEPC (Giữ nguyên của anh) ---
     const firebaseConfig = {
         apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
         authDomain: "hepc-ed95d.firebaseapp.com",
@@ -101,6 +101,7 @@
     let isDetecting = false;
     let faceMatcher = null;
     let lastDescriptor = null;
+    const videoSize = { width: 0, height: 0 };
 
     // 1. Khởi tạo AI Models
     async function init() {
@@ -122,12 +123,27 @@
     // 2. Mở Camera
     async function startCamera() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+            // Yêu cầu độ phân giải lý tưởng
+            const stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    facingMode: "user",
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                } 
+            });
             const video = document.getElementById('video');
             video.srcObject = stream;
+            
+            video.onloadedmetadata = () => {
+                videoSize.width = video.videoWidth;
+                videoSize.height = video.videoHeight;
+                console.log(`Video resolution: ${videoSize.width}x${videoSize.height}`);
+            };
+
             isDetecting = true;
             video.onplay = () => {
                 const canvas = document.getElementById('overlay');
+                // Khung hiển thị 3x4 trên web
                 const displaySize = { width: 240, height: 320 };
                 faceapi.matchDimensions(canvas, displaySize);
                 
@@ -195,7 +211,7 @@
         isDetecting = false;
     }
 
-    // 5. Lưu đăng ký mới
+    // 5. Lưu đăng ký mới (HÀM ĐÃ CẬP NHẬT CẮT ẢNH TỪ TÂM - CENTER CROP)
     async function registerNewUser() {
         const stt = document.getElementById('stt').value.trim();
         const name = document.getElementById('fullname').value.trim();
@@ -212,9 +228,37 @@
         try {
             const video = document.getElementById('video');
             const snap = document.createElement('canvas');
-            snap.width = 450; snap.height = 600; // Tỷ lệ 3x4
+            // Cố định độ phân giải ảnh thẻ 3x4 đầu ra
+            const targetWidth = 450; 
+            const targetHeight = 600;
+            snap.width = targetWidth; 
+            snap.height = targetHeight;
             const ctx = snap.getContext('2d');
-            ctx.drawImage(video, 0, 0, snap.width, snap.height);
+
+            // --- THUẬT TOÁN CẮT ẢNH TỪ TÂM (CENTER CROP) ---
+            const vWidth = video.videoWidth;
+            const vHeight = video.videoHeight;
+            const vAspectRatio = vWidth / vHeight;
+            const tAspectRatio = targetWidth / targetHeight; // 3/4 = 0.75
+
+            let sWidth, sHeight, sx, sy;
+
+            if (vAspectRatio > tAspectRatio) {
+                // Video rộng hơn khung 3x4 (VD: 640x480). Cắt theo chiều cao.
+                sHeight = vHeight;
+                sWidth = vHeight * tAspectRatio;
+                sx = (vWidth - sWidth) / 2; // Lấy từ giữa theo chiều ngang
+                sy = 0;
+            } else {
+                // Video đứng hơn (hiếm gặp trên camera trước). Cắt theo chiều rộng.
+                sWidth = vWidth;
+                sHeight = vWidth / tAspectRatio;
+                sx = 0;
+                sy = (vHeight - sHeight) / 2; // Lấy từ giữa theo chiều dọc
+            }
+
+            // Vẽ phần đã tính toán từ video vào canvas
+            ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, targetWidth, targetHeight);
             
             const userData = {
                 stt: stt,
@@ -230,7 +274,7 @@
 
         } catch (error) {
             console.error(error);
-            alert("Lỗi kết nối Firebase!");
+            alert("Lỗi kết nối Firebase! Hãy chắc chắn anh đã Publish Rules là true.");
             btnReg.innerText = "HOÀN TẤT ĐĂNG KÝ";
             btnReg.disabled = false;
         }
