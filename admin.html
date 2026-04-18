@@ -2,85 +2,88 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>VDC - Quản lý Đào tạo HEPC v1.1.4</title>
+    <title>VDC - Quản lý Đào tạo HEPC v1.1.6</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #007bff; --success: #28a745; --dark: #343a40; }
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f8f9fa; color: var(--dark); }
-        .container { max-width: 1100px; margin: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --dark: #343a40; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background: #f4f7f6; color: var(--dark); }
+        .container { max-width: 1200px; margin: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: white; padding: 15px 25px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         
-        /* Tab Menu */
-        .tab-menu { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #dee2e6; padding-bottom: 10px; }
-        .tab-btn { padding: 10px 20px; border: none; background: #e9ecef; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .tab-btn.active { background: var(--primary); color: white; }
+        /* Dashboard Stats */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 25px; }
+        .stat-card { background: white; padding: 20px; border-radius: 15px; border-left: 6px solid var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .stat-val { font-size: 28px; font-weight: bold; margin-top: 5px; }
+
+        /* Tabs */
+        .tab-menu { display: flex; gap: 12px; margin-bottom: 20px; }
+        .tab-btn { padding: 12px 24px; border: none; background: #ddd; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(0,123,255,0.3); }
         
-        .box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .hidden { display: none; }
         
-        textarea { width: 100%; height: 120px; margin: 10px 0; padding: 12px; border-radius: 10px; border: 1px solid #ccc; box-sizing: border-box; }
-        .btn { padding: 12px 25px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .btn:disabled { background: #ccc; }
+        textarea { width: 100%; height: 130px; margin: 10px 0; padding: 15px; border-radius: 10px; border: 1px solid #ccc; font-size: 14px; }
+        .btn { padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-upload { background: var(--primary); color: white; }
+        .btn-delete { background: var(--danger); color: white; padding: 6px 12px; font-size: 11px; }
+        .btn:active { transform: scale(0.95); }
 
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
-        th, td { border: 1px solid #eee; padding: 12px; text-align: left; font-size: 13px; }
-        th { background: var(--primary); color: white; position: sticky; top: 0; }
-        tr:nth-child(even) { background-color: #fcfcfc; }
-        tr:hover { background-color: #f1f7ff; }
+        /* Table */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+        th { background: #f8f9fa; color: #555; text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
+        tr:hover { background: #f9fbff; }
         
-        .status-badge { padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
-        .bg-success { background: #d4edda; color: #155724; }
-        .bg-wait { background: #fff3cd; color: #856404; }
-        img { border-radius: 5px; border: 1px solid #ddd; cursor: zoom-in; }
-        
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, min-minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 15px; border-radius: 12px; border-left: 5px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-wait { background: #eee; color: #777; }
+        img { border-radius: 4px; border: 1px solid #ddd; object-fit: cover; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
-        <h2>HỆ THỐNG QUẢN TRỊ VDC - HEPC</h2>
-        <div style="font-size: 14px; color: #666;">Phiên bản 1.1.4-stable</div>
+        <h2 style="margin:0; color:var(--primary);">HỆ THỐNG QUẢN TRỊ v1.1.6</h2>
+        <div style="text-align: right;">
+            <div style="font-weight: bold;">Mr. An Toàn</div>
+            <div style="font-size: 12px; color: #888;">Quản lý đào tạo VDC - HEPC</div>
+        </div>
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card" style="border-left-color: #007bff;">
-            <div style="font-size: 12px; color: #888;">TỔNG DANH SÁCH GỐC</div>
-            <div id="stat-total" style="font-size: 24px; font-weight: bold;">0</div>
+        <div class="stat-card" style="border-left-color: #6c757d;">
+            <div style="font-size: 12px; color: #888;">TỔNG HỌC VIÊN</div>
+            <div class="stat-val" id="stat-total">0</div>
         </div>
-        <div class="stat-card" style="border-left-color: #28a745;">
-            <div style="font-size: 12px; color: #888;">ĐÃ ĐIỂM DANH (FACE ID)</div>
-            <div id="stat-done" style="font-size: 24px; font-weight: bold; color: #28a745;">0</div>
+        <div class="stat-card" style="border-left-color: var(--success);">
+            <div style="font-size: 12px; color: #888;">ĐÃ ĐIỂM DANH</div>
+            <div class="stat-val" id="stat-done" style="color:var(--success);">0</div>
         </div>
         <div class="stat-card" style="border-left-color: #ffc107;">
             <div style="font-size: 12px; color: #888;">TỶ LỆ HOÀN THÀNH</div>
-            <div id="stat-percent" style="font-size: 24px; font-weight: bold; color: #ffc107;">0%</div>
+            <div class="stat-val" id="stat-percent" style="color:#b08600;">0%</div>
         </div>
     </div>
 
     <div class="tab-menu">
-        <button class="tab-btn active" onclick="switchTab('list')">📊 THEO DÕI ĐIỂM DANH</button>
-        <button class="tab-btn" onclick="switchTab('upload')">⚙️ NẠP DANH SÁCH MỚI</button>
+        <button class="tab-btn active" onclick="switchTab('list')">📊 DANH SÁCH CHI TIẾT</button>
+        <button class="tab-btn" onclick="switchTab('upload')">⚙️ CẤU HÌNH MASTER LIST</button>
     </div>
 
     <div id="tab-list" class="box">
-        <div style="margin-bottom: 15px; display: flex; justify-content: space-between;">
-            <h3 style="margin:0;">Chi tiết học viên</h3>
-            <button class="btn" style="background:#6c757d; font-size: 12px;" onclick="location.reload()">Làm mới dữ liệu</button>
-        </div>
         <table id="mainTable">
             <thead>
                 <tr>
                     <th>STT</th>
                     <th>Họ và Tên</th>
-                    <th>Ngày sinh</th>
                     <th>Đơn vị / Công ty</th>
                     <th>Trạng thái</th>
                     <th>Thời gian</th>
-                    <th>Ảnh Face ID</th>
+                    <th>Ảnh 3x4</th>
+                    <th>Thao tác</th>
                 </tr>
             </thead>
             <tbody>
@@ -90,15 +93,12 @@
     </div>
 
     <div id="tab-upload" class="box hidden">
-        <h3>CẬP NHẬT MASTER LIST</h3>
-        <p style="font-size: 13px; color: #d9534f;"><b>Chú ý:</b> Khi nạp danh sách mới, STT trùng sẽ bị ghi đè thông tin.</p>
-        <textarea id="csvData" placeholder="Dán 9 cột từ Excel (STT | Họ tên | Phái | Ngày sinh | Bậc | Chức danh | Đơn vị | Công ty | Hình thức)"></textarea>
-        <button class="btn" id="btnUpload" onclick="uploadList()">BẮT ĐẦU TẢI LÊN</button>
+        <h3>NẠP DANH SÁCH TỪ EXCEL</h3>
+        <p style="font-size: 13px; color: #666;">Dán đủ 9 cột để hiện đầy đủ thông tin đối soát trên điện thoại học viên.</p>
+        <textarea id="csvData" placeholder="STT | Họ tên | Phái | Ngày sinh | Bậc | Chức danh | Đơn vị | Công ty | Hình thức"></textarea>
+        <button class="btn btn-upload" id="btnUpload" onclick="uploadList()">BẮT ĐẦU TẢI LÊN</button>
     </div>
 
-    <footer style="text-align:center; padding: 20px; color: #999; font-size: 12px;">
-        Phát triển bởi <strong>Mr. An Toàn (Trần Công Đẹp)</strong> | © 2026 VDC Safety
-    </footer>
 </div>
 
 <script>
@@ -114,11 +114,9 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 1. Chuyển đổi TAB
     function switchTab(tab) {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.box').forEach(b => b.classList.add('hidden'));
-        
         if(tab === 'list') {
             document.getElementById('tab-list').classList.remove('hidden');
             document.querySelector('.tab-btn:nth-child(1)').classList.add('active');
@@ -128,10 +126,10 @@
         }
     }
 
-    // 2. Nạp Master List (Chống đơ máy)
     async function uploadList() {
-        const raw = document.getElementById('csvData').value.trim();
+        const txtArea = document.getElementById('csvData');
         const btn = document.getElementById('btnUpload');
+        const raw = txtArea.value.trim();
         if(!raw) return alert("Vui lòng dán dữ liệu!");
 
         const lines = raw.split('\n');
@@ -148,21 +146,31 @@
                     department: c[6]?.trim() || "", company: c[7]?.trim() || "", type: c[8]?.trim() || ""
                 });
                 count++;
-                btn.innerText = `⏳ ĐANG TẢI (${count}/${lines.length})...`;
+                btn.innerText = `⏳ TIẾN ĐỘ: ${count}/${lines.length}`;
             }
         }
-        alert("Nạp thành công " + count + " học viên!");
-        document.getElementById('csvData').value = "";
+        alert("Đã cập nhật xong Master List!");
+        txtArea.value = "";
         btn.disabled = false;
         btn.innerText = "BẮT ĐẦU TẢI LÊN";
         switchTab('list');
     }
 
-    // 3. Hiển thị danh sách tổng hợp (Master + Điểm danh)
+    // CHỨC NĂNG XÓA ĐĂNG KÝ (CAN THIỆP KHI NHẦM)
+    async function deleteRecord(stt, name) {
+        if(confirm(`Anh có chắc chắn muốn XÓA điểm danh của học viên: ${name} (STT: ${stt})?\n\nDữ liệu ảnh và Face ID sẽ bị xóa, học viên có thể thực hiện điểm danh lại.`)) {
+            try {
+                await db.ref('students/' + stt).remove();
+                alert("Đã xóa thành công!");
+            } catch (e) {
+                alert("Lỗi khi xóa dữ liệu!");
+            }
+        }
+    }
+
     async function refreshData() {
         const masterSnap = await db.ref('master_list').once('value');
         const doneSnap = await db.ref('students').once('value');
-        
         const masterList = masterSnap.val() || {};
         const doneList = doneSnap.val() || {};
         
@@ -172,23 +180,24 @@
         let total = Object.keys(masterList).length;
         let doneCount = 0;
 
-        // Chuyển object sang array và sắp xếp theo STT
         const sortedKeys = Object.keys(masterList).sort((a, b) => parseInt(a) - parseInt(b));
 
         sortedKeys.forEach(stt => {
             const m = masterList[stt];
-            const d = doneList[stt]; // Kiểm tra xem STT này đã có trong danh sách điểm danh chưa
+            const d = doneList[stt];
             
-            let status = `<span class="status-badge bg-wait">Chờ quét mặt</span>`;
-            let photo = `<span style="color:#ccc;">Chưa có</span>`;
+            let status = `<span class="badge badge-wait">Chờ...</span>`;
+            let photo = `<span style="color:#ccc;">-</span>`;
             let time = "-";
+            let action = ""; 
             let displayName = m.name;
 
             if(d) {
-                status = `<span class="status-badge bg-success">Đã điểm danh</span>`;
-                photo = `<img src="${d.photo}" width="50" height="66" onclick="window.open(this.src)">`;
+                status = `<span class="badge badge-success">ĐÃ Xong</span>`;
+                photo = `<img src="${d.photo}" width="45" height="60" onclick="window.open(this.src)">`;
                 time = d.time || "-";
-                displayName = `<b>${d.name}</b>`; // Lấy tên từ bản ghi điểm danh (vì họ có thể sửa tên)
+                displayName = `<b>${d.name}</b>`;
+                action = `<button class="btn btn-delete" onclick="deleteRecord('${stt}', '${d.name}')">Hủy/Xóa</button>`;
                 doneCount++;
             }
 
@@ -196,24 +205,22 @@
                 <tr>
                     <td>${stt}</td>
                     <td>${displayName}</td>
-                    <td>${m.dob || ""}</td>
-                    <td><small>${m.department || ""}<br>${m.company || ""}</small></td>
+                    <td><small>${m.department || ""}</small></td>
                     <td>${status}</td>
                     <td><small>${time}</small></td>
                     <td>${photo}</td>
+                    <td>${action}</td>
                 </tr>
             `;
         });
 
-        // Cập nhật thống kê
         document.getElementById('stat-total').innerText = total;
         document.getElementById('stat-done').innerText = doneCount;
         document.getElementById('stat-percent').innerText = total > 0 ? Math.round((doneCount/total)*100) + "%" : "0%";
     }
 
-    // Tự động tải dữ liệu mỗi khi có thay đổi trên Firebase
-    db.ref('students').on('value', () => { refreshData(); });
-    db.ref('master_list').on('value', () => { refreshData(); });
+    db.ref('students').on('value', () => refreshData());
+    db.ref('master_list').on('value', () => refreshData());
 
 </script>
 </body>
