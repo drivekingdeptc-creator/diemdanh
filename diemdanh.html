@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEPC - Đăng ký Face ID</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #f4f4f9; padding: 20px; }
+        .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        video, canvas { width: 100%; border-radius: 5px; margin-top: 10px; }
+        input { width: 90%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        button { background: #007bff; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:disabled { background: #ccc; }
+        #status { margin-top: 10px; color: #555; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>HEPC DIEM DANH</h2>
+    <p>Vui lòng kiểm tra thông tin và chụp ảnh chân dung</p>
+    
+    <input type="text" id="stt" placeholder="Số thứ tự (STT)">
+    <input type="text" id="name" placeholder="Họ và tên">
+    <input type="text" id="unit" placeholder="Đơn vị công tác">
+
+    <div style="position: relative;">
+        <video id="video" autoplay muted></video>
+        <canvas id="overlay" style="position: absolute; top: 0; left: 0;"></canvas>
+    </div>
+
+    <p id="status">Đang tải mô hình AI...</p>
+    <button id="btnSubmit" disabled onclick="handleRegister()">XÁC NHẬN ĐĂNG KÝ</button>
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const status = document.getElementById('status');
+    const btnSubmit = document.getElementById('btnSubmit');
+
+    // 1. Tải các model AI
+    async function loadModels() {
+        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'; 
+        // Lưu ý: Anh nên tải model về host riêng để ổn định hơn
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+        status.innerText = "Đã sẵn sàng. Hãy nhìn vào camera";
+        startVideo();
+    }
+
+    // 2. Mở Camera
+    function startVideo() {
+        navigator.mediaDevices.getUserMedia({ video: {} })
+            .then(stream => { video.srcObject = stream; })
+            .catch(err => { status.innerText = "Lỗi Camera: " + err; });
+    }
+
+    // 3. Quét khuôn mặt liên tục để kiểm tra
+    video.addEventListener('play', () => {
+        setInterval(async () => {
+            const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                                        .withFaceLandmarks()
+                                        .withFaceDescriptor();
+            if (detections) {
+                status.innerText = "Đã nhận diện khuôn mặt!";
+                status.style.color = "green";
+                btnSubmit.disabled = false;
+                window.currentDescriptor = detections.descriptor; // Lưu chuỗi 128 số
+            } else {
+                status.innerText = "Không tìm thấy khuôn mặt...";
+                status.style.color = "red";
+                btnSubmit.disabled = true;
+            }
+        }, 1000);
+    });
+
+    // 4. Gửi dữ liệu về Google Apps Script
+    async function handleRegister() {
+        const stt = document.getElementById('stt').value;
+        const name = document.getElementById('name').value;
+        
+        if (!stt || !name) {
+            alert("Vui lòng nhập đủ STT và Họ tên");
+            return;
+        }
+
+        btnSubmit.innerText = "Đang xử lý...";
+        btnSubmit.disabled = true;
+
+        // Chụp ảnh từ video để gửi lên Drive
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video, 0, 0);
+        const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+
+        const payload = {
+            stt: stt,
+            name: name,
+            unit: document.getElementById('unit').value,
+            faceDescriptor: Array.from(window.currentDescriptor), // Chuyển Float32Array sang Array
+            image: base64Image
+        };
+
+        // Gọi hàm của Google Apps Script
+        google.script.run.withSuccessHandler(res => {
+            alert("Đăng ký thành công!");
+            location.reload();
+        }).saveEnrollment(payload);
+    }
+
+    loadModels();
+</script>
+</body>
+</html>
