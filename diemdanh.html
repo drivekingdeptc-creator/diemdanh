@@ -3,138 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HEPC - Face ID Check-in</title>
+    <title>HEPC - Xác Thực Khuôn Mặt</title>
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #eef2f7; margin: 0; padding: 20px; }
-        .container { max-width: 450px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        #video-container { position: relative; margin: 15px 0; border-radius: 10px; overflow: hidden; background: #000; line-height: 0; }
-        video { width: 100%; height: auto; transform: scaleX(-1); }
+        body { font-family: 'Segoe UI', sans-serif; text-align: center; background: #f4f7fa; padding: 10px; }
+        .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        #video-box { position: relative; width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 10px; overflow: hidden; margin-bottom: 15px; }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         canvas { position: absolute; top: 0; left: 0; transform: scaleX(-1); }
-        .input-group { margin-bottom: 15px; text-align: left; }
-        input { width: 100%; padding: 12px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; }
-        button { background: #28a745; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:disabled { background: #ccc; cursor: not-allowed; }
-        #loader { color: #555; font-size: 14px; margin-bottom: 10px; }
-        .success-msg { color: #28a745; font-weight: bold; display: none; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        .btn { padding: 15px; width: 100%; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        #btnReg { background: #007bff; color: white; }
+        #btnCheck { background: #28a745; color: white; }
+        .hidden { display: none; }
+        #result { margin-top: 15px; padding: 15px; border-radius: 8px; font-weight: bold; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2 style="color: #0056b3; margin-bottom: 5px;">HỆ THỐNG ĐIỂM DANH</h2>
-    <p style="font-size: 14px; color: #666;">Dành cho lớp học ngày 21/04 - HEPC</p>
+    <h2 id="title">XÁC THỰC HỌC VIÊN</h2>
+    <div id="loading">🚀 Đang khởi động AI...</div>
 
-    <div id="loader">🚀 Đang khởi tạo AI (Chỉ tải lần đầu)...</div>
-
-    <div class="input-group">
+    <div id="setup-form">
         <input type="text" id="stt" placeholder="Số thứ tự (STT)">
-    </div>
-    <div class="input-group">
-        <input type="text" id="fullname" placeholder="Họ và tên học viên">
-    </div>
-
-    <div id="video-container">
-        <video id="video" autoplay muted playsinline></video>
-        <canvas id="overlay"></canvas>
+        <input type="text" id="name" placeholder="Họ và tên">
+        <div style="display:flex; gap:10px;">
+            <button class="btn" id="btnReg" onclick="startCamera('reg')">ĐĂNG KÝ LẦN ĐẦU</button>
+            <button class="btn" id="btnCheck" onclick="startCamera('check')">ĐIỂM DANH</button>
+        </div>
     </div>
 
-    <button id="btnAction" disabled onclick="processEnrollment()">XÁC NHẬN ĐĂNG KÝ</button>
-    <p id="statusText" style="margin-top:10px; font-weight:500;"></p>
-    <div id="successMsg" class="success-msg">✅ Đã lưu thông tin xác thực!</div>
+    <div id="scanner" class="hidden">
+        <div id="video-box">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="overlay"></canvas>
+        </div>
+        <div id="status">Đang tìm khuôn mặt...</div>
+        <button class="btn" id="btnConfirm" disabled onclick="confirmAction()">XÁC NHẬN CHỤP</button>
+    </div>
+
+    <div id="result" class="hidden"></div>
 </div>
 
 <script>
-    const video = document.getElementById('video');
-    const btnAction = document.getElementById('btnAction');
-    const loader = document.getElementById('loader');
-    const statusText = document.getElementById('statusText');
+    let mode = ''; // 'reg' hoặc 'check'
+    let isRunning = false;
+    let faceMatcher = null;
 
-    // 1. Khởi tạo và tải Model (Sẽ được trình duyệt Cache)
     async function init() {
-        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+        const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+        await Promise.all([
+            faceapi.nets.tinyFaceDetector.loadFromUri(URL),
+            faceapi.nets.faceLandmark68Net.loadFromUri(URL),
+            faceapi.nets.faceRecognitionNet.loadFromUri(URL)
+        ]);
+        document.getElementById('loading').classList.add('hidden');
+    }
+
+    async function startCamera(m) {
+        mode = m;
+        document.getElementById('setup-form').classList.add('hidden');
+        document.getElementById('scanner').classList.remove('hidden');
         
-        try {
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-            ]);
-            loader.innerText = "⚡ AI đã sẵn sàng!";
-            startCamera();
-        } catch (err) {
-            loader.innerText = "❌ Lỗi tải Model. Kiểm tra kết nối mạng!";
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+        
+        isRunning = true;
+        video.onplay = runDetection;
+
+        if (mode === 'check') {
+            document.getElementById('btnConfirm').classList.add('hidden');
+            document.getElementById('title').innerText = "ĐANG ĐIỂM DANH...";
+            // Lấy dữ liệu mẫu từ Sheets về để so sánh
+            loadDatabase(); 
+        } else {
+            document.getElementById('btnConfirm').classList.remove('hidden');
+            document.getElementById('title').innerText = "CHỤP ẢNH ĐĂNG KÝ";
         }
     }
 
-    // 2. Mở Camera học viên
-    function startCamera() {
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
-            .then(stream => {
-                video.srcObject = stream;
-                detectFace();
-            })
-            .catch(err => alert("Không thể mở Camera: " + err));
-    }
-
-    // 3. Nhận diện khuôn mặt liên tục tại điện thoại
-    async function detectFace() {
+    async function runDetection() {
+        const video = document.getElementById('video');
         const canvas = document.getElementById('overlay');
-        const displaySize = { width: video.clientWidth, height: video.clientHeight };
+        const displaySize = { width: video.offsetWidth, height: video.offsetHeight };
         faceapi.matchDimensions(canvas, displaySize);
 
-        setInterval(async () => {
-            const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-                                        .withFaceLandmarks()
-                                        .withFaceDescriptor();
+        const loop = setInterval(async () => {
+            if (!isRunning) { clearInterval(loop); return; }
 
-            if (detections) {
-                const resizedDetections = faceapi.resizeResults(detections, displaySize);
-                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
-                faceapi.draw.drawDetections(canvas, resizedDetections);
-                
-                statusText.innerText = "🎯 Đã nhận diện khuôn mặt!";
-                statusText.style.color = "green";
-                btnAction.disabled = false;
-                window.lastDescriptor = detections.descriptor; // Lưu lại chuỗi số
+            const detection = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.2 }))
+                                           .withFaceLandmarks()
+                                           .withFaceDescriptor();
+
+            canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+
+            if (detection) {
+                // Vẽ khung bao quanh cả khuôn mặt thay vì chỉ trán
+                const resized = faceapi.resizeResults(detection, displaySize);
+                faceapi.draw.drawDetections(canvas, resized);
+
+                window.currentDescriptor = detection.descriptor;
+                document.getElementById('btnConfirm').disabled = false;
+                document.getElementById('status').innerText = "✅ Đã thấy khuôn mặt!";
+
+                // Nếu là chế độ điểm danh, tự động so khớp
+                if (mode === 'check' && faceMatcher) {
+                    const match = faceMatcher.findBestMatch(detection.descriptor);
+                    if (match.label !== 'unknown') {
+                        stopAndSuccess(match.label);
+                    }
+                }
             } else {
-                statusText.innerText = "🔍 Hãy đưa mặt vào khung hình...";
-                statusText.style.color = "orange";
-                btnAction.disabled = true;
+                document.getElementById('btnConfirm').disabled = true;
+                document.getElementById('status').innerText = "🔍 Hãy đưa mặt vào khung hình";
             }
         }, 500);
     }
 
-    // 4. Gửi chuỗi số (Vector) về GAS
-    function processEnrollment() {
-        const stt = document.getElementById('stt').value;
-        const name = document.getElementById('fullname').value;
+    function stopAndSuccess(studentName) {
+        isRunning = false;
+        const video = document.getElementById('video');
+        video.srcObject.getTracks().forEach(track => track.stop());
+        
+        document.getElementById('scanner').classList.add('hidden');
+        const resDiv = document.getElementById('result');
+        resDiv.classList.remove('hidden');
+        resDiv.classList.add('success');
+        resDiv.innerHTML = `XÁC NHẬN THÀNH CÔNG!<br><span style="font-size:24px;">${studentName}</span>`;
+    }
 
-        if (!stt || !name) {
-            alert("Vui lòng nhập đủ STT và Tên!");
-            return;
+    async function loadDatabase() {
+        // Hàm này sẽ gọi GAS để lấy danh sách Descriptor đã đăng ký
+        google.script.run.withSuccessHandler(data => {
+            // data: [{label: 'Tên HV', descriptors: [float32array]}]
+            const labeledDescriptors = data.map(item => 
+                new faceapi.LabeledFaceDescriptors(item.name, [new Float32Array(item.descriptor)])
+            );
+            faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.6);
+        }).getRegisteredUsers();
+    }
+
+    function confirmAction() {
+        if (mode === 'reg') {
+            const data = {
+                stt: document.getElementById('stt').value,
+                name: document.getElementById('name').value,
+                descriptor: Array.from(window.currentDescriptor)
+            };
+            document.getElementById('status').innerText = "Đang lưu dữ liệu...";
+            google.script.run.withSuccessHandler(() => {
+                alert("Đăng ký thành công!");
+                location.reload();
+            }).saveRegistration(data);
         }
-
-        btnAction.innerText = "Đang lưu...";
-        btnAction.disabled = true;
-
-        // Chụp ảnh nhỏ để làm ảnh đại diện (Preview)
-        const snap = document.createElement('canvas');
-        snap.width = 160; snap.height = 120;
-        snap.getContext('2d').drawImage(video, 0, 0, 160, 120);
-
-        const data = {
-            stt: stt,
-            name: name,
-            descriptor: Array.from(window.lastDescriptor), // Gửi chuỗi 128 số
-            image: snap.toDataURL('image/jpeg', 0.7)
-        };
-
-        // Gửi về Google Apps Script
-        google.script.run.withSuccessHandler(() => {
-            document.getElementById('successMsg').style.display = 'block';
-            btnAction.innerText = "HOÀN TẤT";
-        }).saveData(data);
     }
 
     init();
