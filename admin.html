@@ -1,29 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý HEPC - Mr. An Toàn</title>
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .box { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        textarea { width: 100%; height: 150px; margin: 10px 0; padding: 10px; }
+        .btn { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 12px; }
+        th { background: #eee; }
+        img { border-radius: 4px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>1. UPLOAD DANH SÁCH GỐC (MASTER LIST)</h2>
+        <p>Copy 9 cột từ Excel (STT | Họ tên | Phái | Ngày sinh | Bậc | Chức danh | Đơn vị | Công ty | Hình thức) rồi dán vào đây:</p>
+        <textarea id="csvData" placeholder="Dán dữ liệu Excel tại đây..."></textarea>
+        <button class="btn" onclick="uploadList()">CẬP NHẬT DANH SÁCH</button>
+    </div>
+
+    <div class="box">
+        <h2>2. KẾT QUẢ ĐIỂM DANH THỰC TẾ</h2>
+        <div id="count">Đang tải...</div>
+        <table id="listTable">
+            <thead>
+                <tr><th>STT</th><th>Họ Tên</th><th>Ngày sinh</th><th>Đơn vị</th><th>Thời gian</th><th>Ảnh thẻ 3x4</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
 <script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
+        authDomain: "hepc-ed95d.firebaseapp.com",
+        databaseURL: "https://hepc-ed95d-default-rtdb.firebaseio.com",
+        projectId: "hepc-ed95d",
+        storageBucket: "hepc-ed95d.firebasestorage.app",
+        messagingSenderId: "536861347284",
+        appId: "1:536861347284:web:61d162705878577f741a41"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
     async function uploadList() {
         const raw = document.getElementById('csvData').value;
         const lines = raw.split('\n');
         let count = 0;
-        
         for (let line of lines) {
-            const cols = line.split('\t'); // Tách theo Tab của Excel
-            if(cols.length >= 2) {
-                const stt = cols[0].trim();
-                const studentData = {
-                    stt: stt,
-                    name: cols[1] ? cols[1].trim() : "",
-                    gender: cols[2] ? cols[2].trim() : "",
-                    dob: cols[3] ? cols[3].trim() : "",
-                    rank: cols[4] ? cols[4].trim() : "",
-                    position: cols[5] ? cols[5].trim() : "",
-                    department: cols[6] ? cols[6].trim() : "",
-                    company: cols[7] ? cols[7].trim() : "",
-                    type: cols[8] ? cols[8].trim() : ""
-                };
-                // Lưu vào master_list trên Firebase
-                await db.ref('master_list/' + stt).set(studentData);
+            const c = line.split('\t');
+            if(c.length >= 2) {
+                const stt = c[0].trim();
+                await db.ref('master_list/' + stt).set({
+                    stt: stt, name: c[1]?.trim(), gender: c[2]?.trim(),
+                    dob: c[3]?.trim(), rank: c[4]?.trim(), position: c[5]?.trim(),
+                    department: c[6]?.trim(), company: c[7]?.trim(), type: c[8]?.trim()
+                });
                 count++;
             }
         }
-        alert("Đã cập nhật " + count + " học viên với đầy đủ thông tin!");
+        alert("Thành công! Đã nạp " + count + " học viên.");
     }
+
+    db.ref('students').on('value', snap => {
+        const data = snap.val();
+        const tbody = document.querySelector('#listTable tbody');
+        tbody.innerHTML = '';
+        if(data) {
+            const list = Object.values(data);
+            document.getElementById('count').innerText = "Số lượng đã có mặt: " + list.length;
+            list.forEach(u => {
+                tbody.innerHTML += `<tr>
+                    <td>${u.stt}</td><td>${u.name}</td><td>${u.dob}</td>
+                    <td>${u.department}</td><td>${u.time}</td>
+                    <td><img src="${u.photo}" width="60" height="80"></td>
+                </tr>`;
+            });
+        }
+    });
 </script>
+</body>
+</html>
