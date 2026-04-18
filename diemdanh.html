@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HEPC - VDC Face ID v1.1.0</title>
+    <title>HEPC - VDC Face ID v1.1.2</title>
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
@@ -14,42 +14,50 @@
         #video-container { position: relative; width: 240px; height: 320px; margin: 15px auto; background: #000; border-radius: 15px; overflow: hidden; border: 4px solid var(--primary); }
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         canvas { position: absolute; top: 0; left: 0; transform: scaleX(-1); }
-        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; text-transform: uppercase; }
+        .face-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; height: 75%; border: 2px dashed rgba(255,255,255,0.4); border-radius: 50% 50% 45% 45%; pointer-events: none; }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; text-transform: uppercase; transition: 0.2s; }
         #btnCapture { background: var(--primary); color: white; }
         input { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
         .form-verify { display: none; margin-top: 15px; text-align: left; background: var(--warning); padding: 15px; border-radius: 12px; border: 1px solid #ffeeba; }
         .result-card { display: none; background: #fff; border: 3px solid var(--success); border-radius: 20px; padding: 25px; margin-top: 10px; animation: slideUp 0.4s ease; }
         #res-photo { width: 180px; height: 240px; object-fit: cover; border-radius: 12px; border: 4px solid #f0f0f0; margin-bottom: 15px; }
         footer { margin-top: auto; padding: 20px 10px; font-size: 11px; color: #888; text-align: center; }
+        .version-tag { background: #ddd; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
+
 <div class="app-container">
     <h3 style="margin:0; color: var(--primary);">HEPC SAFETY AI</h3>
-    <p id="loading-msg" style="font-size:12px; color:red; margin: 10px 0; font-weight:bold;">⌛ Hệ thống đang khởi động AI...</p>
+    <p id="loading-msg" style="font-size:12px; color:red; margin: 10px 0; font-weight:bold;">⌛ Đang nạp cấu hình AI...</p>
+
     <div id="scanner-section">
         <div id="video-container">
             <video id="video" autoplay muted playsinline></video>
             <canvas id="overlay"></canvas>
+            <div class="face-guide"></div>
         </div>
         <p id="scan-status" style="font-size:14px; font-weight:bold; min-height: 20px;">Vui lòng đợi giây lát...</p>
         <button class="btn" id="btnCapture" onclick="checkFace()" disabled>XÁC NHẬN KHUÔN MẶT</button>
     </div>
+
     <div id="search-section" style="display:none; margin-top:15px; border-top: 2px dashed #eee; padding-top: 15px;">
-        <p style="color:#d9534f; font-size:14px; font-weight:bold;">⚠️ KHÔNG TÌM THẤY DỮ LIỆU KHUÔN MẶT</p>
+        <p style="color:#d9534f; font-size:14px; font-weight:bold;">⚠️ CHƯA CÓ DỮ LIỆU KHUÔN MẶT</p>
         <input type="number" id="inputSTT" placeholder="Nhập Số Thứ Tự (STT) của bạn">
         <button class="btn" style="background:#555; color:white;" onclick="searchStudent()">TÌM THÔNG TIN ĐỂ ĐĂNG KÝ</button>
     </div>
+
     <div id="verify-section" class="form-verify">
         <p style="font-size: 13px; color: #856404; line-height: 1.5; margin-bottom: 12px; font-style: italic;">
             <strong>Lưu ý:</strong> Để phục vụ cho công tác làm chứng chỉ đào tạo cuối khóa, kính đề nghị các anh/chị học viên <strong>KIỂM TRA</strong> và <strong>ĐIỀN</strong> đầy đủ các thông tin bên dưới. Trân trọng cảm ơn!
         </p>
-        <div id="info-display" style="font-size: 12px; background: rgba(255,255,255,0.6); padding: 8px; border-radius: 8px; margin-bottom: 10px; line-height: 1.6; border: 1px solid #ddd;"></div>
+        <div id="info-display" style="font-size: 12px; background: rgba(255,255,255,0.6); padding: 10px; border-radius: 8px; margin-bottom: 10px; line-height: 1.6; border: 1px solid #ddd;"></div>
         <label style="font-size: 11px; font-weight: bold; color: var(--primary);">HỌ VÀ TÊN (KIỂM TRA & SỬA NẾU SAI):</label>
         <input type="text" id="editName">
         <button class="btn" style="background:var(--success); color:white;" onclick="saveFinal()">XÁC NHẬN ĐIỂM DANH</button>
     </div>
+
     <div id="result-screen" class="result-card">
         <img id="res-photo" src="">
         <h2 id="res-name" style="margin:0; font-size:22px;"></h2>
@@ -58,7 +66,12 @@
         <button class="btn" style="background:#f0f0f0; color:#333; margin-top: 20px;" onclick="location.reload()">TIẾP TỤC QUÉT</button>
     </div>
 </div>
-<footer>Phát triển bởi <strong>Mr. An Toàn (Trần Công Đẹp)</strong> | v1.1.0</footer>
+
+<footer>
+    <div>Hệ thống điểm danh thông minh VDC - HEPC</div>
+    <div>Phiên bản: <span class="version-tag">v1.1.2-stable</span> • 18/04/2026</div>
+    <div>Phát triển bởi <strong>Mr. An Toàn (Trần Công Đẹp)</strong></div>
+</footer>
 
 <script>
     const firebaseConfig = {
@@ -72,13 +85,17 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+
     let lastDescriptor = null, isDetecting = false, faceMatcher = null, currentStudentData = null;
 
     async function initAI() {
         const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
         try {
+            document.getElementById('loading-msg').innerText = "⌛ Đang tải AI (1/3)...";
             await faceapi.nets.tinyFaceDetector.loadFromUri(URL);
+            document.getElementById('loading-msg').innerText = "⌛ Đang tải AI (2/3)...";
             await faceapi.nets.faceLandmark68Net.loadFromUri(URL);
+            document.getElementById('loading-msg').innerText = "⌛ Đang tải AI (3/3)...";
             await faceapi.nets.faceRecognitionNet.loadFromUri(URL);
             document.getElementById('loading-msg').style.display = 'none';
             startCamera();
@@ -97,13 +114,18 @@
                 faceapi.matchDimensions(canvas, { width: 240, height: 320 });
                 setInterval(async () => {
                     if(!isDetecting) return;
-                    const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+                    const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.2 }))
+                                             .withFaceLandmarks().withFaceDescriptor();
                     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
                     if(det) {
                         faceapi.draw.drawDetections(canvas, faceapi.resizeResults(det, { width: 240, height: 320 }));
                         lastDescriptor = det.descriptor;
                         document.getElementById('btnCapture').disabled = false;
-                        document.getElementById('scan-status').innerText = "✅ SẴN SÀNG";
+                        document.getElementById('scan-status').innerText = "✅ SẴN SÀNG XÁC NHẬN";
+                        document.getElementById('scan-status').style.color = "green";
+                    } else {
+                        document.getElementById('btnCapture').disabled = true;
+                        document.getElementById('scan-status').innerText = "🔍 Đang tìm khuôn mặt...";
                     }
                 }, 500);
             };
@@ -135,6 +157,7 @@
 
     async function searchStudent() {
         const stt = document.getElementById('inputSTT').value;
+        if(!stt) return alert("Vui lòng nhập STT!");
         const snap = await db.ref('master_list/' + stt).once('value');
         const s = snap.val();
         if(s) {
@@ -147,7 +170,7 @@
                 <b>Công ty:</b> ${s.company || '...'}
             `;
             document.getElementById('editName').value = s.name;
-        } else { alert("Không tìm thấy STT này!"); }
+        } else { alert("Không tìm thấy STT " + stt + " trong danh sách lớp!"); }
     }
 
     async function saveFinal() {
@@ -174,6 +197,7 @@
         isDetecting = false;
         if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
         document.getElementById('scanner-section').style.display = 'none';
+        document.getElementById('search-section').style.display = 'none';
         document.getElementById('verify-section').style.display = 'none';
         document.getElementById('res-name').innerText = user.name.toUpperCase();
         document.getElementById('res-stt').innerText = "STT: " + user.stt;
