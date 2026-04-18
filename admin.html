@@ -1,5 +1,50 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý HEPC - Mr. An Toàn v1.1.2</title>
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        textarea { width: 100%; height: 150px; margin: 10px 0; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: monospace; }
+        .btn { padding: 12px 25px; background: #007bff; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 8px; overflow: hidden; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
+        th { background: #007bff; color: white; }
+        img { border-radius: 4px; border: 1px solid #ccc; object-fit: cover; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h2>1. NẠP DANH SÁCH GỐC (MASTER LIST)</h2>
+        <p style="font-size: 13px; color: #666;">Copy từ Excel: STT | Họ tên | Phái | Ngày sinh | Bậc | Chức danh | Đơn vị | Công ty | Hình thức</p>
+        <textarea id="csvData" placeholder="Dán dữ liệu Excel tại đây..."></textarea>
+        <button class="btn" id="btnUpload" onclick="uploadList()">CẬP NHẬT DANH SÁCH</button>
+    </div>
+
+    <div class="box">
+        <h2>2. DANH SÁCH HỌC VIÊN ĐÃ ĐIỂM DANH</h2>
+        <div id="count" style="font-weight: bold; color: #28a745; margin-bottom: 10px;">Đang kết nối dữ liệu...</div>
+        <table id="listTable">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Họ Tên</th>
+                    <th>Ngày sinh</th>
+                    <th>Đơn vị</th>
+                    <th>Thời gian quét</th>
+                    <th>Ảnh thẻ 3x4</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
 <script>
-    // --- GIỮ NGUYÊN FIREBASE CONFIG CỦA ANH ---
     const firebaseConfig = {
         apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
         authDomain: "hepc-ed95d.firebaseapp.com",
@@ -12,77 +57,58 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- HÀM UPLOAD TỐI ƯU ---
     async function uploadList() {
         const txtArea = document.getElementById('csvData');
-        const btn = document.querySelector('.btn');
+        const btn = document.getElementById('btnUpload');
         const raw = txtArea.value.trim();
-        
-        if (!raw) {
-            alert("Vui lòng dán dữ liệu từ Excel trước!");
-            return;
-        }
+        if (!raw) return alert("Vui lòng dán dữ liệu Excel!");
 
         const lines = raw.split('\n');
-        let count = 0;
-
-        // 1. Khóa giao diện để tránh bấm nhiều lần
         btn.disabled = true;
-        btn.innerText = "⏳ ĐANG TẢI LÊN (0/" + lines.length + ")...";
-        btn.style.background = "#ccc";
+        let count = 0;
 
         try {
             for (let line of lines) {
                 const c = line.split('\t');
-                if (c.length >= 2) {
+                if(c.length >= 2) {
                     const stt = c[0].trim();
-                    // Gửi dữ liệu lên Firebase
                     await db.ref('master_list/' + stt).set({
-                        stt: stt, 
-                        name: c[1]?.trim() || "", 
-                        gender: c[2]?.trim() || "",
-                        dob: c[3]?.trim() || "", 
-                        rank: c[4]?.trim() || "", 
-                        position: c[5]?.trim() || "",
-                        department: c[6]?.trim() || "", 
-                        company: c[7]?.trim() || "", 
-                        type: c[8]?.trim() || ""
+                        stt: stt, name: c[1]?.trim() || "", gender: c[2]?.trim() || "",
+                        dob: c[3]?.trim() || "", rank: c[4]?.trim() || "", position: c[5]?.trim() || "",
+                        department: c[6]?.trim() || "", company: c[7]?.trim() || "", type: c[8]?.trim() || ""
                     });
                     count++;
-                    // Cập nhật trạng thái trên nút bấm
-                    btn.innerText = "⏳ ĐANG TẢI LÊN (" + count + "/" + lines.length + ")...";
+                    btn.innerText = `⏳ ĐANG TẢI LÊN (${count}/${lines.length})...`;
                 }
             }
-
-            // 2. Hoàn tất: Xóa trắng ô nhập và mở khóa nút
-            alert("Thành công! Đã nạp xong " + count + " học viên vào Master List.");
-            txtArea.value = ""; // Xóa sạch bảng nhập
-
-        } catch (error) {
-            console.error(error);
-            alert("Có lỗi xảy ra trong quá trình tải lên!");
+            alert("Thành công! Đã nạp " + count + " học viên.");
+            txtArea.value = ""; 
+        } catch (e) {
+            alert("Lỗi kết nối Firebase!");
         } finally {
             btn.disabled = false;
             btn.innerText = "CẬP NHẬT DANH SÁCH";
-            btn.style.background = "#007bff";
         }
     }
 
-    // Hiển thị danh sách thực tế (giữ nguyên)
     db.ref('students').on('value', snap => {
         const data = snap.val();
         const tbody = document.querySelector('#listTable tbody');
         tbody.innerHTML = '';
         if(data) {
             const list = Object.values(data);
-            document.getElementById('count').innerText = "Số lượng đã có mặt: " + list.length;
+            document.getElementById('count').innerText = "✅ TỔNG CỘNG ĐÃ CÓ MẶT: " + list.length + " HỌC VIÊN";
             list.forEach(u => {
                 tbody.innerHTML += `<tr>
-                    <td>${u.stt}</td><td>${u.name}</td><td>${u.dob}</td>
+                    <td>${u.stt}</td><td><b>${u.name}</b></td><td>${u.dob}</td>
                     <td>${u.department}</td><td>${u.time}</td>
                     <td><img src="${u.photo}" width="60" height="80"></td>
                 </tr>`;
             });
+        } else {
+            document.getElementById('count').innerText = "Chưa có học viên nào điểm danh.";
         }
     });
 </script>
+</body>
+</html>
