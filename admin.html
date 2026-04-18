@@ -2,28 +2,108 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>VDC ADMIN v1.2.0</title>
+    <title>VDC ADMIN v1.2.2 - QUẢN LÝ HEPC</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }
-        .box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; background: #007bff; color: white; }
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; }
-        th, td { border: 1px solid #eee; padding: 12px; font-size: 13px; text-align: left; }
-        th { background: #007bff; color: white; }
-        img { border-radius: 4px; border: 1px solid #ccc; object-fit: cover; }
+        :root { --primary: #007bff; --success: #28a745; --danger: #dc3545; --dark: #343a40; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 20px; background: #f4f7f6; color: var(--dark); }
+        .container { max-width: 1200px; margin: auto; }
+        
+        .box { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        
+        /* Menu Điều hướng */
+        .nav-tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .nav-link { padding: 10px 20px; border: none; background: #eee; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .nav-link.active { background: var(--primary); color: white; }
+
+        textarea { width: 100%; height: 150px; margin: 10px 0; padding: 15px; border-radius: 10px; border: 1px solid #ccc; font-size: 13px; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; padding: 5px 10px; font-size: 11px; }
+
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
+        th, td { border-bottom: 1px solid #eee; padding: 12px; font-size: 13px; text-align: left; }
+        th { background: #f8f9fa; color: #555; text-transform: uppercase; font-size: 11px; }
+        
+        .hidden { display: none; }
+        .badge { padding: 4px 8px; border-radius: 5px; font-size: 11px; font-weight: bold; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-wait { background: #fff3cd; color: #856404; }
+        img { border-radius: 5px; border: 1px solid #ddd; object-fit: cover; }
+        
+        .stats-grid { display: flex; gap: 20px; margin-bottom: 20px; }
+        .stat-card { flex: 1; background: white; padding: 15px; border-radius: 10px; border-left: 5px solid var(--primary); }
     </style>
 </head>
 <body>
-    <h2>VDC ADMIN v1.2.0 - HEPC SAFETY</h2>
-    <div id="stats" style="margin-bottom: 10px; font-weight: bold; color: #28a745;">ĐANG KẾT NỐI...</div>
-    <div class="box">
-        <table>
-            <thead><tr><th>STT</th><th>Họ Tên</th><th>Chức danh</th><th>Đơn vị</th><th>Thời gian</th><th>Ảnh 3x4</th><th>Thao tác</th></tr></thead>
-            <tbody id="tblBody"></tbody>
+
+<div class="container">
+    <div class="header">
+        <h2 style="color:var(--primary); margin:0;">VDC ADMIN v1.2.2</h2>
+        <div id="clock" style="font-weight: bold;"></div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div style="font-size:11px; color:#888;">TỔNG DANH SÁCH GỐC</div>
+            <div id="count-master" style="font-size:24px; font-weight:bold;">0</div>
+        </div>
+        <div class="stat-card" style="border-left-color: var(--success);">
+            <div style="font-size:11px; color:#888;">ĐÃ ĐIỂM DANH</div>
+            <div id="count-done" style="font-size:24px; font-weight:bold; color:var(--success);">0</div>
+        </div>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="nav-link active" onclick="showTab('tab-done')">📊 ĐÃ ĐIỂM DANH</button>
+        <button class="nav-link" onclick="showTab('tab-master')">📋 DANH SÁCH GỐC</button>
+        <button class="nav-link" onclick="showTab('tab-upload')">📥 NẠP DỮ LIỆU</button>
+    </div>
+
+    <div id="tab-done" class="box">
+        <h3>Học viên đã hoàn tất quét mặt</h3>
+        <table id="table-done">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Họ Tên</th>
+                    <th>Đơn vị</th>
+                    <th>Chức danh</th>
+                    <th>Thời gian</th>
+                    <th>Ảnh 3x4</th>
+                    <th>Thao tác</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
         </table>
     </div>
+
+    <div id="tab-master" class="box hidden">
+        <h3>Toàn bộ danh sách lớp (Master List)</h3>
+        <table id="table-master">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Họ Tên</th>
+                    <th>Ngày sinh</th>
+                    <th>Đơn vị</th>
+                    <th>Trạng thái</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="tab-upload" class="box hidden">
+        <h3>Nạp danh sách học viên mới</h3>
+        <p style="font-size:12px; color:#666;">Dán dữ liệu từ Excel (STT | Họ tên | Phái | Ngày sinh | Bậc | Chức danh | Đơn vị | Công ty | Hình thức | Nhóm | Khóa)</p>
+        <textarea id="csvData" placeholder="Dán dữ liệu 11 cột tại đây..."></textarea>
+        <button class="btn btn-primary" id="btnUpload" onclick="uploadList()">BẮT ĐẦU TẢI LÊN</button>
+    </div>
+
+</div>
 
 <script>
     const firebaseConfig = {
@@ -38,21 +118,83 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    db.ref('students').on('value', snap => {
-        const data = snap.val() || {};
-        const tbody = document.getElementById('tblBody');
-        tbody.innerHTML = '';
-        const list = Object.values(data);
-        document.getElementById('stats').innerText = "TỔNG CỘNG ĐÃ ĐIỂM DANH: " + list.length + " HỌC VIÊN";
-        list.sort((a,b) => parseInt(a.stt) - parseInt(b.stt)).forEach(u => {
-            tbody.innerHTML += `<tr>
-                <td>${u.stt}</td><td><b>${u.name}</b></td><td>${u.position || "-"}</td>
-                <td>${u.department || "-"}</td><td>${u.time}</td>
-                <td><img src="${u.photo}" width="50" height="66"></td>
-                <td><button onclick="if(confirm('Xóa?')) db.ref('students/${u.stt}').remove()" style="color:red; background:none; border:none; cursor:pointer;">Xóa</button></td>
-            </tr>`;
+    // Điều hướng Tab
+    function showTab(id) {
+        document.querySelectorAll('.box').forEach(b => b.classList.add('hidden'));
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        document.getElementById(id).classList.remove('hidden');
+        event.currentTarget.classList.add('active');
+    }
+
+    // Nạp danh sách (Chống đơ máy)
+    async function uploadList() {
+        const txt = document.getElementById('csvData');
+        const btn = document.getElementById('btnUpload');
+        const lines = txt.value.trim().split('\n');
+        if(!txt.value) return alert("Chưa có dữ liệu!");
+
+        btn.disabled = true;
+        let count = 0;
+        for(let line of lines) {
+            const c = line.split('\t');
+            if(c.length >= 2) {
+                const stt = c[0].trim();
+                await db.ref('master_list/' + stt).set({
+                    stt, name: c[1], gender: c[2], dob: c[3], rank: c[4], 
+                    position: c[5], department: c[6], company: c[7], 
+                    type: c[8], group: c[9], course: c[10]
+                });
+                count++;
+                btn.innerText = `ĐANG TẢI (${count}/${lines.length})...`;
+            }
+        }
+        alert("Đã nạp thành công!");
+        txt.value = ""; btn.disabled = false; btn.innerText = "BẮT ĐẦU TẢI LÊN";
+    }
+
+    // Xóa điểm danh
+    async function deleteRec(stt) {
+        if(confirm(`Xóa điểm danh của STT ${stt}?`)) await db.ref('students/' + stt).remove();
+    }
+
+    // Cập nhật dữ liệu Real-time
+    function fetchData() {
+        db.ref().on('value', snap => {
+            const data = snap.val() || {};
+            const master = data.master_list || {};
+            const done = data.students || {};
+
+            // 1. Cập nhật Thống kê
+            document.getElementById('count-master').innerText = Object.keys(master).length;
+            document.getElementById('count-done').innerText = Object.keys(done).length;
+
+            // 2. Bảng Đã điểm danh
+            const tbodyDone = document.querySelector('#table-done tbody');
+            tbodyDone.innerHTML = '';
+            Object.values(done).sort((a,b) => parseInt(a.stt) - parseInt(b.stt)).forEach(u => {
+                tbodyDone.innerHTML += `<tr>
+                    <td>${u.stt}</td><td><b>${u.name}</b></td><td>${u.department}</td>
+                    <td>${u.position}</td><td><small>${u.time}</small></td>
+                    <td><img src="${u.photo}" width="50" height="66"></td>
+                    <td><button class="btn btn-danger" onclick="deleteRec('${u.stt}')">Xóa</button></td>
+                </tr>`;
+            });
+
+            // 3. Bảng Danh sách gốc
+            const tbodyMaster = document.querySelector('#table-master tbody');
+            tbodyMaster.innerHTML = '';
+            Object.values(master).sort((a,b) => parseInt(a.stt) - parseInt(b.stt)).forEach(m => {
+                const isDone = done[m.stt];
+                tbodyMaster.innerHTML += `<tr>
+                    <td>${m.stt}</td><td>${m.name}</td><td>${m.dob}</td><td>${m.department}</td>
+                    <td>${isDone ? '<span class="badge badge-success">ĐÃ QUÉT MẶT</span>' : '<span class="badge badge-wait">CHỜ QUÉT...</span>'}</td>
+                </tr>`;
+            });
         });
-    });
+    }
+
+    setInterval(() => { document.getElementById('clock').innerText = new Date().toLocaleTimeString('vi-VN'); }, 1000);
+    fetchData();
 </script>
 </body>
 </html>
