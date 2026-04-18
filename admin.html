@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>VDC Admin v1.3.1 - Quản lý Đào tạo</title>
+    <title>VDC Admin v1.3.2 - Quản lý Đào tạo</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <style>
@@ -16,30 +16,31 @@
         .nav-link.active { background: var(--primary); color: white; }
         table { width: 100%; border-collapse: collapse; background: white; margin-top: 10px; }
         th, td { border: 1px solid #eee; padding: 10px; font-size: 12px; text-align: left; }
-        th { background: #f8f9fa; color: #555; text-transform: uppercase; font-size: 11px; }
+        th { background: #007bff; color: white; text-transform: uppercase; font-size: 11px; }
         .hidden { display: none; }
-        .btn { padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; color: white; }
+        .btn { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; }
+        img { border-radius: 5px; border: 1px solid #ccc; }
     </style>
 </head>
 <body>
 
 <div style="max-width: 1300px; margin: auto;">
-    <h2 style="color:var(--primary); margin-bottom: 5px;">VDC MANAGEMENT SYSTEM v1.3.1</h2>
+    <h2 style="color:var(--primary); margin-bottom: 5px;">VDC MANAGEMENT SYSTEM v1.3.2</h2>
     
     <div class="box" style="border-top: 5px solid var(--primary);">
         <h3 style="margin-top:0;">⚙️ THIẾT LẬP PHIÊN ĐIỂM DANH HIỆN TẠI</h3>
         <div class="config-bar">
             <div>
-                <label style="font-size:11px; font-weight:bold;">ĐỊA ĐIỂM (Cột 9):</label>
+                <label style="font-size:11px; font-weight:bold;">ĐỊA ĐIỂM (Cột 10):</label>
                 <select id="cfg-location" onchange="loadClasses()"></select>
             </div>
             <div>
-                <label style="font-size:11px; font-weight:bold;">LỚP (Cột 10):</label>
+                <label style="font-size:11px; font-weight:bold;">LỚP (Cột 11):</label>
                 <select id="cfg-class" onchange="saveSession()"></select>
             </div>
             <div>
-                <label style="font-size:11px; font-weight:bold;">NGÀY HỌC:</label>
-                <input type="text" id="cfg-date" placeholder="dd/mm/yyyy" onchange="saveSession()">
+                <label style="font-size:11px; font-weight:bold;">NGÀY HỌC (dd/mm/yyyy):</label>
+                <input type="text" id="cfg-date" onchange="saveSession()">
             </div>
             <div>
                 <label style="font-size:11px; font-weight:bold;">BUỔI HỌC:</label>
@@ -53,12 +54,12 @@
     </div>
 
     <div class="nav-tabs">
-        <button class="nav-link active" onclick="switchTab('tab-report')">📊 BÁO CÁO</button>
-        <button class="nav-link" onclick="switchTab('tab-upload')">📥 NẠP DANH SÁCH</button>
+        <button class="nav-link active" onclick="switchTab('tab-report')">📊 BÁO CÁO ĐIỂM DANH</button>
+        <button class="nav-link" onclick="switchTab('tab-upload')">📥 NẠP DANH SÁCH TỔNG</button>
     </div>
 
     <div id="tab-report" class="box">
-        <div id="stats" style="font-weight:bold; margin-bottom:10px; color: var(--success);"></div>
+        <div id="stats" style="font-weight:bold; margin-bottom:10px; color: var(--success); font-size: 16px;"></div>
         <table id="tbl-report">
             <thead>
                 <tr>
@@ -71,8 +72,9 @@
 
     <div id="tab-upload" class="box hidden">
         <h3>Nạp Master List (11 cột)</h3>
-        <textarea id="csvData" placeholder="Dán dữ liệu Excel..."></textarea>
-        <button class="btn" style="background:var(--primary);" id="btnUpload" onclick="uploadData()">TẢI LÊN</button>
+        <p style="font-size:12px; color:red;">* Đảm bảo cột 10 là Địa điểm, cột 11 là Tên lớp.</p>
+        <textarea id="csvData" placeholder="Dán dữ liệu Excel 11 cột vào đây..."></textarea>
+        <button class="btn" style="background:var(--primary);" id="btnUpload" onclick="uploadData()">TẢI LÊN HỆ THỐNG</button>
     </div>
 </div>
 
@@ -98,40 +100,48 @@
 
     async function uploadData() {
         const txt = document.getElementById('csvData').value.trim();
+        if(!txt) return alert("Chưa có dữ liệu!");
         const lines = txt.split('\n');
         const btn = document.getElementById('btnUpload');
         btn.disabled = true;
         let count = 0;
+
         for(let line of lines) {
             const c = line.split('\t');
             if(c.length >= 11) {
                 const stt = c[0].trim();
-                const loc = c[9].trim(); // Cột 9 Địa điểm
-                const cls = c[10].trim(); // Cột 10 Lớp
+                const loc = c[9].trim(); // Cột 10
+                const cls = c[10].trim(); // Cột 11
                 await db.ref(`master_list/${loc}/${cls}/${stt}`).set({
                     stt, name: c[1], gender: c[2], dob: c[3], rank: c[4], 
                     position: c[5], department: c[6], company: c[7], type: c[8],
                     location: loc, class: cls
                 });
                 count++;
-                btn.innerText = `Đang nạp: ${count}`;
+                btn.innerText = `Đang nạp: ${count}/${lines.length}`;
             }
         }
-        alert("Nạp thành công!"); location.reload();
+        alert("Đã nạp thành công " + count + " học viên!");
+        location.reload();
     }
 
     function saveSession() {
+        const loc = document.getElementById('cfg-location').value;
+        const cls = document.getElementById('cfg-class').value;
+        const dateRaw = document.getElementById('cfg-date').value;
         const session = {
-            location: document.getElementById('cfg-location').value,
-            class: document.getElementById('cfg-class').value,
-            date: document.getElementById('cfg-date').value.replace(/\//g, '-'),
+            location: loc,
+            class: cls,
+            date: dateRaw.replace(/\//g, '-'),
             session: document.getElementById('cfg-session').value
         };
         db.ref('current_session').set(session);
+        renderTable(); // Gọi lại hàm vẽ bảng khi đổi filter
     }
 
     async function loadClasses() {
         const loc = document.getElementById('cfg-location').value;
+        if(!loc) return;
         const snap = await db.ref(`master_list/${loc}`).once('value');
         const classes = snap.val() || {};
         const clsSelect = document.getElementById('cfg-class');
@@ -139,45 +149,64 @@
         saveSession();
     }
 
-    function init() {
-        // Thiết lập ngày mặc định dd/MM/yyyy
+    // HÀM VẼ BẢNG CẢI TIẾN
+    async function renderTable() {
+        const snap = await db.ref().once('value');
+        const data = snap.val() || {};
+        const sess = data.current_session || {};
+        
+        if(!sess.location || !sess.class) return;
+
+        const master = data.master_list || {};
+        const students = (master[sess.location] && master[sess.location][sess.class]) ? master[sess.location][sess.class] : {};
+        const attendance = data.attendance || {};
+        const dateKey = sess.date || "";
+        const sessKey = sess.session || "";
+
+        const tbody = document.querySelector('#tbl-report tbody');
+        tbody.innerHTML = '';
+        let done = 0;
+        
+        const sortedStudents = Object.values(students).sort((a,b) => parseInt(a.stt) - parseInt(b.stt));
+
+        sortedStudents.forEach(s => {
+            const record = (attendance[dateKey] && attendance[dateKey][sessKey]) ? attendance[dateKey][sessKey][s.stt] : null;
+            if(record) done++;
+            tbody.innerHTML += `<tr>
+                <td>${s.stt}</td><td><b>${s.name}</b></td><td>${s.department}</td>
+                <td>${record ? '<b style="color:green">✅ CÓ MẶT</b>' : '<i style="color:gray">Vắng</i>'}</td>
+                <td>${record ? `<img src="${record.photo}" width="40" height="53">`:''}</td>
+                <td>${record ? record.time : ''}</td>
+                <td><button onclick="deleteAtt('${dateKey}','${sessKey}','${s.stt}')" style="background:red; color:white; border:none; border-radius:4px; padding:3px 8px; cursor:pointer;">Xóa</button></td>
+            </tr>`;
+        });
+        document.getElementById('stats').innerText = `LỚP: ${sess.class} | SĨ SỐ: ${done}/${sortedStudents.length}`;
+    }
+
+    async function deleteAtt(d, s, stt) {
+        if(confirm("Xóa điểm danh học viên này?")) {
+            await db.ref(`attendance/${d}/${s}/${stt}`).remove();
+            renderTable();
+        }
+    }
+
+    async function init() {
         const now = new Date();
         document.getElementById('cfg-date').value = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
 
-        db.ref().on('value', snap => {
-            const data = snap.val() || {};
-            const master = data.master_list || {};
-            const sessionInfo = data.current_session || {};
-            
-            const locSelect = document.getElementById('cfg-location');
-            if(Object.keys(master).length > 0 && locSelect.options.length === 0) {
-                locSelect.innerHTML = Object.keys(master).map(l => `<option value="${l}">${l}</option>`).join('');
-                loadClasses();
-            }
+        const snapMaster = await db.ref('master_list').once('value');
+        const master = snapMaster.val() || {};
+        const locSelect = document.getElementById('cfg-location');
+        
+        if(Object.keys(master).length > 0) {
+            locSelect.innerHTML = Object.keys(master).map(l => `<option value="${l}">${l}</option>`).join('');
+            await loadClasses();
+        }
 
-            const loc = locSelect.value;
-            const cls = document.getElementById('cfg-class').value;
-            const students = (master[loc] && master[loc][cls]) ? master[loc][cls] : {};
-            const attendance = data.attendance || {};
-            const dateKey = sessionInfo.date || "";
-            const sessKey = sessionInfo.session || "";
-
-            const tbody = document.querySelector('#tbl-report tbody');
-            tbody.innerHTML = '';
-            let done = 0;
-            Object.values(students).sort((a,b)=>parseInt(a.stt)-parseInt(b.stt)).forEach(s => {
-                const record = (attendance[dateKey] && attendance[dateKey][sessKey]) ? attendance[dateKey][sessKey][s.stt] : null;
-                if(record) done++;
-                tbody.innerHTML += `<tr>
-                    <td>${s.stt}</td><td><b>${s.name}</b></td><td>${s.department}</td>
-                    <td>${record ? '✅' : '⏳'}</td><td>${record ? `<img src="${record.photo}" width="40">`:''}</td>
-                    <td>${record ? record.time : ''}</td>
-                    <td><button onclick="db.ref('attendance/${dateKey}/${sessKey}/${s.stt}').remove()">Xóa</button></td>
-                </tr>`;
-            });
-            document.getElementById('stats').innerText = `Sĩ số: ${done}/${Object.keys(students).length}`;
-        });
+        // Lắng nghe thay đổi điểm danh để cập nhật bảng ngay lập tức
+        db.ref('attendance').on('value', () => { renderTable(); });
     }
+
     init();
 </script>
 </body>
