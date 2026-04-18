@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HEPC - VDC Face ID v1.1.2</title>
+    <title>HEPC - VDC Face ID v1.1.3</title>
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
@@ -11,10 +11,28 @@
         :root { --primary: #0056b3; --success: #28a745; --bg: #f0f2f5; --warning: #fff3cd; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .app-container { max-width: 420px; width: 100%; background: white; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 25px; text-align: center; box-sizing: border-box; }
-        #video-container { position: relative; width: 240px; height: 320px; margin: 15px auto; background: #000; border-radius: 15px; overflow: hidden; border: 4px solid var(--primary); }
+        
+        /* Khung Camera 3x4 chuyên nghiệp */
+        #video-container { 
+            position: relative; width: 240px; height: 320px; margin: 15px auto; 
+            background: #000; border-radius: 15px; overflow: hidden; border: 4px solid var(--primary); 
+        }
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         canvas { position: absolute; top: 0; left: 0; transform: scaleX(-1); }
-        .face-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; height: 75%; border: 2px dashed rgba(255,255,255,0.4); border-radius: 50% 50% 45% 45%; pointer-events: none; }
+        
+        /* HIỆU ỨNG HÌNH BẦU DỤC (OVAL GUIDE) */
+        .face-guide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            /* Tạo lớp phủ mờ xung quanh và để trống hình bầu dục ở giữa */
+            background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.6) 75%);
+            pointer-events: none; border-radius: 12px;
+        }
+        .face-guide::after {
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 70%; height: 75%; border: 2px dashed rgba(255,255,255,0.6);
+            border-radius: 50% 50% 45% 45%;
+        }
+
         .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; text-transform: uppercase; transition: 0.2s; }
         #btnCapture { background: var(--primary); color: white; }
         input { width: 100%; padding: 14px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
@@ -69,7 +87,7 @@
 
 <footer>
     <div>Hệ thống điểm danh thông minh VDC - HEPC</div>
-    <div>Phiên bản: <span class="version-tag">v1.1.2-stable</span> • 18/04/2026</div>
+    <div>Phiên bản: <span class="version-tag">v1.1.3-stable</span> • 18/04/2026</div>
     <div>Phát triển bởi <strong>Mr. An Toàn (Trần Công Đẹp)</strong></div>
 </footer>
 
