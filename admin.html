@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VDC SAFETY - ADMIN DASHBOARD v1.7.5</title>
+    <title>VDC SAFETY - ADMIN DASHBOARD v1.7.6</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-auth-compat.js"></script>
@@ -35,7 +35,7 @@
         .stat-card h4 { margin: 0; font-size: 12px; color: #718096; text-transform: uppercase; }
         .stat-card .value { font-size: 28px; font-weight: 800; margin-top: 5px; color: #2d3748; }
 
-        /* CLASSIC CONFIG BAR (Khôi phục giao diện cũ) */
+        /* CONFIG BAR */
         .config-bar { display: flex; flex-wrap: wrap; gap: 15px; background: #e2e8f0; padding: 15px; border-radius: 10px; align-items: flex-end; margin-bottom: 15px; }
         .input-group { flex: 1; min-width: 150px; }
         label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #4a5568; text-transform: uppercase; }
@@ -52,6 +52,7 @@
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-warning { background: var(--warning); color: #000; }
+        .btn-success { background: var(--success); color: white; }
 
         .hidden { display: none !important; }
         #image-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; }
@@ -125,21 +126,23 @@
                 <button class="btn" style="background:#cbd5e0;" onclick="clearGPS()">❌ XÓA GPS</button>
             </div>
         </div>
-        <div class="content-box">
-            <h3>Nạp danh sách học viên (Excel)</h3>
-            <textarea id="csvData" style="height:150px;" placeholder="Dán dữ liệu từ file Excel vào đây..."></textarea>
-            <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="uploadData()">XÁC NHẬN NẠP DỮ LIỆU</button>
-        </div>
     </div>
 
     <div id="tab-add-student" class="hidden">
         <div class="content-box">
-            <h3>Thêm học viên bổ sung</h3>
-            <div style="display:flex; flex-direction:column; gap:15px; max-width:500px;">
-                <div><label>Họ và tên:</label><input type="text" id="add-new-name"></div>
-                <div><label>Đơn vị/Bộ phận:</label><input type="text" id="add-new-dept"></div>
-                <button class="btn btn-primary" onclick="addSingleStudent()">➕ XÁC NHẬN THÊM</button>
+            <h3>Thêm học viên lẻ (Bổ sung đột xuất)</h3>
+            <div style="display:flex; gap:15px; align-items: flex-end;">
+                <div style="flex:2;"><label>Họ và tên:</label><input type="text" id="add-new-name" placeholder="Nhập tên..."></div>
+                <div style="flex:2;"><label>Đơn vị/Bộ phận:</label><input type="text" id="add-new-dept" placeholder="Nhập đơn vị..."></div>
+                <button class="btn btn-primary" style="height:41px;" onclick="addSingleStudent()">➕ THÊM LẺ</button>
             </div>
+        </div>
+
+        <div class="content-box">
+            <h3>Nạp danh sách hàng loạt (Excel)</h3>
+            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Dán dữ liệu từ file Excel (yêu cầu đúng 10 cột theo mẫu).</p>
+            <textarea id="csvData" style="height:150px;" placeholder="Dán dữ liệu tại đây..."></textarea>
+            <button class="btn btn-success" style="width:100%; margin-top:10px;" onclick="uploadData()">XÁC NHẬN NẠP DANH SÁCH</button>
         </div>
     </div>
 
@@ -153,6 +156,7 @@
 <div id="image-modal" onclick="this.style.display='none'"><img id="modal-img" style="max-height:90%; border:5px solid white;"></div>
 
 <script>
+    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
         authDomain: "hepc-ed95d.firebaseapp.com",
@@ -168,7 +172,6 @@
 
     let currentFilter = 'all';
 
-    // XỬ LÝ GIAO DIỆN
     function toggleSidebar() {
         document.getElementById('sidebar').classList.toggle('closed');
         document.getElementById('main').classList.toggle('expanded');
@@ -177,19 +180,14 @@
     function switchTab(id, el) {
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         el.classList.add('active');
-        
         ['tab-attendance', 'tab-config', 'tab-add-student', 'tab-audit', 'tab-export'].forEach(t => {
             document.getElementById(t).classList.add('hidden');
         });
         document.getElementById(id).classList.remove('hidden');
-
-        // Ẩn/Hiện thống kê tùy tab
         document.getElementById('stats-area').style.display = (id === 'tab-attendance') ? 'grid' : 'none';
-        
         if(window.innerWidth < 768) toggleSidebar();
     }
 
-    // BẢO MẬT & ĐĂNG NHẬP
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const adminSnap = await db.ref('admins').once('value');
@@ -198,19 +196,20 @@
                 document.getElementById('login-overlay').style.display = 'none';
                 document.body.style.display = 'block';
                 init();
-            } else { alert("Tài khoản không được cấp quyền!"); auth.signOut(); }
+            } else { alert("Từ chối quyền truy cập!"); auth.signOut(); }
+        } else {
+            document.body.style.display = 'block';
+            document.getElementById('login-overlay').style.display = 'flex';
         }
     });
 
     function login() { auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()); }
     function logout() { auth.signOut().then(() => location.reload()); }
 
-    // KHỞI TẠO
     async function init() {
         setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('vi-VN'); }, 1000);
         const now = new Date();
         document.getElementById('cfg-date').value = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
-        
         db.ref('master_list').once('value', snap => {
             document.getElementById('cfg-location').innerHTML = Object.keys(snap.val() || {}).map(l => `<option value="${l}">${l}</option>`).join('');
             loadClasses();
@@ -231,7 +230,6 @@
         const date = document.getElementById('cfg-date').value.replace(/\//g, '-');
         const sess = document.getElementById('cfg-session').value;
         const old = (await db.ref('current_session').once('value')).val() || {};
-        
         await db.ref('current_session').update({ location: loc, class: cls, session: sess, date: date });
         renderReport();
     }
@@ -242,9 +240,9 @@
         const sess = data.current_session || {};
         const students = (data.master_list?.[sess.location]?.[sess.class]) || {};
         const attendance = (data.attendance?.[sess.date]?.[sess.session]) || {};
-        
+        const registered = data.students || {};
+
         document.getElementById('current-class-display').innerText = `${sess.class.toUpperCase()} - ${sess.location}`;
-        
         const tbody = document.getElementById('body-report');
         tbody.innerHTML = '';
         let present = 0;
@@ -252,32 +250,83 @@
 
         Object.values(students).sort((a,b)=>parseInt(a.stt)-parseInt(b.stt)).forEach(s => {
             const att = attendance[s.stt];
+            const isReg = registered[s.stt];
             if(att) present++;
-
             if (currentFilter === 'present' && !att) return;
             if (currentFilter === 'absent' && att) return;
 
             tbody.innerHTML += `<tr>
                 <td>${s.stt}</td>
-                <td style="text-align:left;"><b>${s.name}</b></td>
-                <td>${s.department || ""}</td>
-                <td><b style="color:${att?'var(--success)':'#ccc'}">${att?'CÓ MẶT':'VẮNG'}</b></td>
+                <td style="text-align:left;"><b>${s.name}</b><br><small style="color:${isReg?'#3182ce':'#a0aec0'}">${isReg?'● Đã có ID':'○ Trống'}</small></td>
+                <td>${s.department || "..."}</td>
+                <td><b style="color:${att?'var(--success)':'#cbd5e0'}">${att?'CÓ MẶT':'VẮNG'}</b></td>
                 <td>${att?`<img src="${att.photo}" class="img-thumb" onclick="openImg('${att.photo}')">`:''}</td>
                 <td>${att?att.time.split(' ngày ')[0]:''}</td>
                 <td><button onclick="delAtt('${sess.date}','${sess.session}','${s.stt}')" style="color:red; border:none; background:none; cursor:pointer;">Xóa</button></td>
             </tr>`;
         });
-
         document.getElementById('stat-total').innerText = total;
         document.getElementById('stat-present').innerText = present;
         document.getElementById('stat-absent').innerText = total - present;
     }
 
+    async function addSingleStudent() {
+        const name = document.getElementById('add-new-name').value.trim();
+        const dept = document.getElementById('add-new-dept').value.trim();
+        const loc = document.getElementById('cfg-location').value;
+        const cls = document.getElementById('cfg-class').value;
+        if(!name) return alert("Nhập tên!");
+        const snap = await db.ref(`master_list/${loc}/${cls}`).once('value');
+        const students = snap.val() || {};
+        let max = 0; Object.keys(students).forEach(stt => { if(parseInt(stt)>max) max=parseInt(stt); });
+        const next = max + 1;
+        await db.ref(`master_list/${loc}/${cls}/${next}`).set({ stt: next.toString(), name: name, department: dept, location: loc, class: cls });
+        document.getElementById('add-new-name').value = '';
+        document.getElementById('add-new-dept').value = '';
+        alert("Đã thêm thành công!"); renderReport();
+    }
+
+    async function uploadData() {
+        const raw = document.getElementById('csvData').value.trim();
+        if(!raw) return alert("Vui lòng dán dữ liệu!");
+        const rows = raw.split('\n');
+        for(let r of rows) {
+            const c = r.split('\t');
+            if(c.length >= 10) {
+                await db.ref(`master_list/${c[8]}/${c[9]}/${c[0]}`).set({
+                    stt: c[0], name: c[1], gender: c[2], dob: c[3], rank: c[4], position: c[5], department: c[6], company: c[7], location: c[8], class: c[9]
+                });
+            }
+        }
+        alert("Nạp danh sách thành công!"); document.getElementById('csvData').value = ''; loadClasses();
+    }
+
     function filterList(type, e) { e.stopPropagation(); currentFilter = type; renderReport(); }
     function resetFilter() { if(currentFilter!=='all'){currentFilter='all'; renderReport();} }
     function openImg(src) { document.getElementById('modal-img').src = src; document.getElementById('image-modal').style.display = 'flex'; }
-    async function pinGPS() { navigator.geolocation.getCurrentPosition(p => { db.ref('current_session').update({lat:p.coords.latitude, lng:p.coords.longitude}); alert("Đã ghim tọa độ!"); }); }
+    async function pinGPS() { navigator.geolocation.getCurrentPosition(p => { db.ref('current_session').update({lat:p.coords.latitude, lng:p.coords.longitude}); alert("Ghim vị trí thành công!"); }); }
+    async function clearGPS() { await db.ref('current_session/lat').remove(); await db.ref('current_session/lng').remove(); alert("Đã xóa GPS!"); }
     async function delAtt(d, s, id) { if(confirm("Xóa điểm danh?")) await db.ref(`attendance/${d}/${s}/${id}`).remove(); }
+
+    async function generateFullReport() {
+        const snap = await db.ref().once('value');
+        const data = snap.val() || {};
+        const sess = data.current_session || {};
+        const master = data.master_list?.[sess.location]?.[sess.class] || {};
+        const attData = data.attendance || {};
+        const dates = Object.keys(attData).sort();
+        let h1 = `<tr><th rowspan="2">STT</th><th rowspan="2">Họ tên</th><th rowspan="2">Đơn vị</th>`;
+        let h2 = `<tr>`;
+        dates.forEach(d => { h1 += `<th colspan="2">Ngày ${d.replace(/-/g,'/')}</th>`; h2 += `<th>S</th><th>C</th>`; });
+        document.getElementById('report-thead').innerHTML = h1 + `</tr>` + h2 + `</tr>`;
+        let b = '';
+        Object.values(master).sort((a,b)=>parseInt(a.stt)-parseInt(b.stt)).forEach(s => {
+            b += `<tr><td>${s.stt}</td><td style="text-align:left;">${s.name}</td><td style="text-align:left;">${s.department||""}</td>`;
+            dates.forEach(d => { b += `<td>${attData[d]?.['Sáng']?.[s.stt]?'X':''}</td><td>${attData[d]?.['Chiều']?.[s.stt]?'X':''}</td>`; });
+            b += `</tr>`;
+        });
+        document.getElementById('report-tbody').innerHTML = b;
+    }
 </script>
 </body>
 </html>
