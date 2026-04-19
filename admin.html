@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VDC SAFETY - ADMIN DASHBOARD v1.7.6</title>
+    <title>VDC SAFETY - ADMIN DASHBOARD v1.7.7</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-auth-compat.js"></script>
@@ -35,7 +35,7 @@
         .stat-card h4 { margin: 0; font-size: 12px; color: #718096; text-transform: uppercase; }
         .stat-card .value { font-size: 28px; font-weight: 800; margin-top: 5px; color: #2d3748; }
 
-        /* CONFIG BAR */
+        /* CLASSIC CONFIG BAR */
         .config-bar { display: flex; flex-wrap: wrap; gap: 15px; background: #e2e8f0; padding: 15px; border-radius: 10px; align-items: flex-end; margin-bottom: 15px; }
         .input-group { flex: 1; min-width: 150px; }
         label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #4a5568; text-transform: uppercase; }
@@ -48,7 +48,7 @@
         td { padding: 10px; border-bottom: 1px solid #edf2f7; font-size: 13px; text-align: center; }
         .img-thumb { width: 40px; height: 55px; object-fit: cover; border-radius: 4px; cursor: pointer; }
 
-        .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-danger { background: var(--danger); color: white; }
         .btn-warning { background: var(--warning); color: #000; }
@@ -114,35 +114,40 @@
 
     <div id="tab-config" class="hidden">
         <div class="content-box">
-            <h3 style="margin-top:0;">Cấu hình lớp đang dạy</h3>
+            <h3 style="margin-top:0;">Cấu hình phiên dạy</h3>
             <div class="config-bar">
                 <div class="input-group"><label>ĐỊA ĐIỂM</label><select id="cfg-location" onchange="loadClasses()"></select></div>
                 <div class="input-group"><label>LỚP HỌC</label><select id="cfg-class" onchange="saveSession()"></select></div>
                 <div class="input-group"><label>NGÀY</label><input type="text" id="cfg-date" onchange="saveSession()"></div>
                 <div class="input-group"><label>BUỔI</label><select id="cfg-session" onchange="saveSession()"><option value="Sáng">Sáng</option><option value="Chiều">Chiều</option></select></div>
             </div>
-            <div style="display:flex; gap:10px;">
-                <button class="btn btn-warning" onclick="pinGPS()">📍 GHIM VỊ TRÍ GPS</button>
-                <button class="btn" style="background:#cbd5e0;" onclick="clearGPS()">❌ XÓA GPS</button>
+            
+            <div style="background: #fff8e1; border: 1px solid #ffe082; padding: 15px; border-radius: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 15px;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label style="color: #856404; font-size: 10px;">📍 TỌA ĐỘ BẢO MẬT HIỆN TẠI:</label>
+                    <div id="gps-display" style="font-weight: bold; font-size: 14px; color: #004085; margin-top: 5px;">
+                        <span style="color: #999; font-weight: normal;">Chưa ghim</span>
+                    </div>
+                </div>
+                <button class="btn btn-warning" onclick="pinGPS()">📍 GHIM VỊ TRÍ</button>
+                <button class="btn" style="background:#cbd5e0; color:#4a5568;" onclick="clearGPS()">❌ XÓA GPS</button>
             </div>
         </div>
     </div>
 
     <div id="tab-add-student" class="hidden">
         <div class="content-box">
-            <h3>Thêm học viên lẻ (Bổ sung đột xuất)</h3>
-            <div style="display:flex; gap:15px; align-items: flex-end;">
-                <div style="flex:2;"><label>Họ và tên:</label><input type="text" id="add-new-name" placeholder="Nhập tên..."></div>
-                <div style="flex:2;"><label>Đơn vị/Bộ phận:</label><input type="text" id="add-new-dept" placeholder="Nhập đơn vị..."></div>
+            <h3>Thêm học viên lẻ</h3>
+            <div style="display:flex; gap:15px; align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex:2; min-width: 200px;"><label>Họ và tên:</label><input type="text" id="add-new-name"></div>
+                <div style="flex:2; min-width: 200px;"><label>Đơn vị:</label><input type="text" id="add-new-dept"></div>
                 <button class="btn btn-primary" style="height:41px;" onclick="addSingleStudent()">➕ THÊM LẺ</button>
             </div>
         </div>
-
         <div class="content-box">
-            <h3>Nạp danh sách hàng loạt (Excel)</h3>
-            <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Dán dữ liệu từ file Excel (yêu cầu đúng 10 cột theo mẫu).</p>
-            <textarea id="csvData" style="height:150px;" placeholder="Dán dữ liệu tại đây..."></textarea>
-            <button class="btn btn-success" style="width:100%; margin-top:10px;" onclick="uploadData()">XÁC NHẬN NẠP DANH SÁCH</button>
+            <h3>Nạp danh sách từ Excel (10 cột)</h3>
+            <textarea id="csvData" style="height:150px; margin-bottom: 10px;" placeholder="Dán dữ liệu Excel..."></textarea>
+            <button class="btn btn-success" style="width:100%" onclick="uploadData()">XÁC NHẬN NẠP LIST</button>
         </div>
     </div>
 
@@ -153,10 +158,9 @@
     </div>
 </div>
 
-<div id="image-modal" onclick="this.style.display='none'"><img id="modal-img" style="max-height:90%; border:5px solid white;"></div>
+<div id="image-modal" onclick="this.style.display='none'"><img id="modal-img" style="max-height:90%; border:5px solid white; border-radius: 10px;"></div>
 
 <script>
-    // --- FIREBASE CONFIG ---
     const firebaseConfig = {
         apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
         authDomain: "hepc-ed95d.firebaseapp.com",
@@ -169,34 +173,18 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const auth = firebase.auth();
-
     let currentFilter = 'all';
 
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('closed');
-        document.getElementById('main').classList.toggle('expanded');
-    }
-
-    function switchTab(id, el) {
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
-        ['tab-attendance', 'tab-config', 'tab-add-student', 'tab-audit', 'tab-export'].forEach(t => {
-            document.getElementById(t).classList.add('hidden');
-        });
-        document.getElementById(id).classList.remove('hidden');
-        document.getElementById('stats-area').style.display = (id === 'tab-attendance') ? 'grid' : 'none';
-        if(window.innerWidth < 768) toggleSidebar();
-    }
-
+    // BẢO MẬT
     auth.onAuthStateChanged(async (user) => {
         if (user) {
             const adminSnap = await db.ref('admins').once('value');
-            const admins = Object.values(adminSnap.val() || {});
-            if (admins.map(e=>e.toLowerCase()).includes(user.email.toLowerCase())) {
+            const admins = Object.values(adminSnap.val() || {}).map(e => e.toLowerCase().trim());
+            if (admins.includes(user.email.toLowerCase().trim())) {
                 document.getElementById('login-overlay').style.display = 'none';
                 document.body.style.display = 'block';
                 init();
-            } else { alert("Từ chối quyền truy cập!"); auth.signOut(); }
+            } else { alert("Tài khoản không được cấp quyền!"); auth.signOut(); }
         } else {
             document.body.style.display = 'block';
             document.getElementById('login-overlay').style.display = 'flex';
@@ -206,20 +194,60 @@
     function login() { auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()); }
     function logout() { auth.signOut().then(() => location.reload()); }
 
+    // ĐIỀU HƯỚNG
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('closed');
+        document.getElementById('main').classList.toggle('expanded');
+    }
+
+    function switchTab(id, el) {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+        ['tab-attendance','tab-config','tab-add-student','tab-audit','tab-export'].forEach(t => document.getElementById(t).classList.add('hidden'));
+        document.getElementById(id).classList.remove('hidden');
+        document.getElementById('stats-area').style.display = (id === 'tab-attendance') ? 'grid' : 'none';
+        if(window.innerWidth < 768) toggleSidebar();
+    }
+
+    // NGHIỆP VỤ GPS
+    async function pinGPS() {
+        if (!navigator.geolocation) return alert("Không hỗ trợ GPS!");
+        document.getElementById('gps-display').innerHTML = "⏳ Đang xác định vị trí...";
+        navigator.geolocation.getCurrentPosition(async p => {
+            const lat = p.coords.latitude; const lng = p.coords.longitude;
+            await db.ref('current_session').update({ lat: lat, lng: lng });
+            updateGPSUI(lat, lng);
+            alert("Đã ghim vị trí lớp học!");
+        }, () => alert("Lỗi lấy vị trí!"), { enableHighAccuracy: true });
+    }
+
+    function updateGPSUI(lat, lng) {
+        if (lat && lng) {
+            const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+            document.getElementById('gps-display').innerHTML = `
+                <a href="${mapUrl}" target="_blank" style="color: #004085; text-decoration: underline;">
+                    ${lat.toFixed(6)}, ${lng.toFixed(6)} 🔗
+                </a> <small>(Bấm để xem bản đồ)</small>`;
+        }
+    }
+
+    async function clearGPS() { if(confirm("Xóa GPS?")) { await db.ref('current_session/lat').remove(); await db.ref('current_session/lng').remove(); renderReport(); } }
+
+    // QUẢN LÝ DỮ LIỆU
     async function init() {
         setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('vi-VN'); }, 1000);
         const now = new Date();
         document.getElementById('cfg-date').value = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
         db.ref('master_list').once('value', snap => {
-            document.getElementById('cfg-location').innerHTML = Object.keys(snap.val() || {}).map(l => `<option value="${l}">${l}</option>`).join('');
+            const locS = document.getElementById('cfg-location');
+            locS.innerHTML = Object.keys(snap.val() || {}).map(l => `<option value="${l}">${l}</option>`).join('');
             loadClasses();
         });
         db.ref('attendance').on('value', () => renderReport());
     }
 
     async function loadClasses() {
-        const loc = document.getElementById('cfg-location').value;
-        const snap = await db.ref(`master_list/${loc}`).once('value');
+        const snap = await db.ref(`master_list/${document.getElementById('cfg-location').value}`).once('value');
         document.getElementById('cfg-class').innerHTML = Object.keys(snap.val() || {}).map(c => `<option value="${c}">${c}</option>`).join('');
         saveSession();
     }
@@ -241,12 +269,14 @@
         const students = (data.master_list?.[sess.location]?.[sess.class]) || {};
         const attendance = (data.attendance?.[sess.date]?.[sess.session]) || {};
         const registered = data.students || {};
-
+        
         document.getElementById('current-class-display').innerText = `${sess.class.toUpperCase()} - ${sess.location}`;
+        updateGPSUI(sess.lat, sess.lng);
+        if(!sess.lat) document.getElementById('gps-display').innerHTML = '<span style="color:#999">Chưa ghim</span>';
+
         const tbody = document.getElementById('body-report');
         tbody.innerHTML = '';
-        let present = 0;
-        let total = Object.keys(students).length;
+        let present = 0; let total = Object.keys(students).length;
 
         Object.values(students).sort((a,b)=>parseInt(a.stt)-parseInt(b.stt)).forEach(s => {
             const att = attendance[s.stt];
@@ -275,38 +305,29 @@
         const dept = document.getElementById('add-new-dept').value.trim();
         const loc = document.getElementById('cfg-location').value;
         const cls = document.getElementById('cfg-class').value;
-        if(!name) return alert("Nhập tên!");
+        if(!name) return;
         const snap = await db.ref(`master_list/${loc}/${cls}`).once('value');
-        const students = snap.val() || {};
-        let max = 0; Object.keys(students).forEach(stt => { if(parseInt(stt)>max) max=parseInt(stt); });
+        let max = 0; Object.keys(snap.val() || {}).forEach(stt => { if(parseInt(stt)>max) max=parseInt(stt); });
         const next = max + 1;
         await db.ref(`master_list/${loc}/${cls}/${next}`).set({ stt: next.toString(), name: name, department: dept, location: loc, class: cls });
-        document.getElementById('add-new-name').value = '';
-        document.getElementById('add-new-dept').value = '';
-        alert("Đã thêm thành công!"); renderReport();
+        document.getElementById('add-new-name').value = ''; document.getElementById('add-new-dept').value = '';
+        alert("Đã thêm học viên mới!"); renderReport();
     }
 
     async function uploadData() {
         const raw = document.getElementById('csvData').value.trim();
-        if(!raw) return alert("Vui lòng dán dữ liệu!");
-        const rows = raw.split('\n');
-        for(let r of rows) {
+        if(!raw) return;
+        for(let r of raw.split('\n')) {
             const c = r.split('\t');
-            if(c.length >= 10) {
-                await db.ref(`master_list/${c[8]}/${c[9]}/${c[0]}`).set({
-                    stt: c[0], name: c[1], gender: c[2], dob: c[3], rank: c[4], position: c[5], department: c[6], company: c[7], location: c[8], class: c[9]
-                });
-            }
+            if(c.length >= 10) await db.ref(`master_list/${c[8]}/${c[9]}/${c[0]}`).set({ stt: c[0], name: c[1], gender: c[2], dob: c[3], rank: c[4], position: c[5], department: c[6], company: c[7], location: c[8], class: c[9] });
         }
-        alert("Nạp danh sách thành công!"); document.getElementById('csvData').value = ''; loadClasses();
+        alert("Thành công!"); document.getElementById('csvData').value = ''; loadClasses();
     }
 
-    function filterList(type, e) { e.stopPropagation(); currentFilter = type; renderReport(); }
+    function filterList(t, e) { e.stopPropagation(); currentFilter = t; renderReport(); }
     function resetFilter() { if(currentFilter!=='all'){currentFilter='all'; renderReport();} }
-    function openImg(src) { document.getElementById('modal-img').src = src; document.getElementById('image-modal').style.display = 'flex'; }
-    async function pinGPS() { navigator.geolocation.getCurrentPosition(p => { db.ref('current_session').update({lat:p.coords.latitude, lng:p.coords.longitude}); alert("Ghim vị trí thành công!"); }); }
-    async function clearGPS() { await db.ref('current_session/lat').remove(); await db.ref('current_session/lng').remove(); alert("Đã xóa GPS!"); }
-    async function delAtt(d, s, id) { if(confirm("Xóa điểm danh?")) await db.ref(`attendance/${d}/${s}/${id}`).remove(); }
+    function openImg(s) { document.getElementById('modal-img').src = s; document.getElementById('image-modal').style.display = 'flex'; }
+    async function delAtt(d, s, id) { if(confirm("Xóa?")) await db.ref(`attendance/${d}/${s}/${id}`).remove(); }
 
     async function generateFullReport() {
         const snap = await db.ref().once('value');
