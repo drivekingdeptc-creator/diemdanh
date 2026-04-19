@@ -2,112 +2,88 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>VDC Admin v1.5.0 - Professional Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VDC - ĐIỂM DANH AI v1.5.1 (GPS)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #004085; --success: #28a745; --bg: #f4f7f6; --danger: #dc3545; --purple: #6f42c1; --dark: #212529; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
-        .config-bar { display: flex; flex-wrap: wrap; gap: 15px; background: #e2e8f0; padding: 15px; border-radius: 10px; align-items: flex-end; }
-        .input-group { flex: 1; min-width: 150px; }
-        label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #4a5568; }
-        select, input, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e0; font-size: 14px; box-sizing: border-box; }
+        :root { --primary: #004085; --success: #155724; --bg: #f0f2f5; --danger: #d9534f; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .app-container { max-width: 420px; width: 100%; background: white; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 20px; text-align: center; box-sizing: border-box; }
         
-        .nav-tabs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; background: #ddd; padding: 5px; border-radius: 10px; }
-        .nav-link { flex: 1; min-width: 120px; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        .nav-link.active { background: var(--primary); color: white; }
+        #video-container { position: relative; width: 260px; height: 347px; margin: 10px auto; background: #000; border-radius: 20px; overflow: hidden; border: 4px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        canvas { position: absolute; top: 0; left: 0; transform: scaleX(-1); }
         
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: center; font-size: 12px; }
-        th { background: #007bff; color: white; text-transform: uppercase; font-size: 11px; }
-        
-        .hidden { display: none; }
-        .btn { padding: 8px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; margin: 2px; font-size: 12px; display: inline-flex; align-items: center; justify-content: center; }
-        
-        /* Modal Phóng lớn */
-        #image-modal { display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; cursor: zoom-out; }
-        #image-modal img { max-height: 95%; max-width: 95%; border: 5px solid white; border-radius: 10px; }
-        
-        .audit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 20px; }
-        .audit-card { background: #f8f9fa; border: 2px solid #ddd; border-radius: 12px; padding: 10px; text-align: center; }
-        .audit-card img { width: 100%; height: 260px; object-fit: cover; border-radius: 8px; cursor: zoom-in; }
+        .face-guide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.7) 80%); pointer-events: none; }
+        .face-guide::after { content: ''; position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%); width: 65%; height: 70%; border: 2px dashed rgba(255,255,255,0.6); border-radius: 50% 50% 45% 45%; }
 
-        /* Bố cục khu vực thêm học viên và nạp list */
-        .control-panel { display: flex; gap: 15px; align-items: flex-end; margin-top: 15px; padding: 15px; background: #fff; border: 1px solid #dee2e6; border-radius: 10px; }
-        .upload-area { margin-top: 10px; background: #fdfdfe; border: 1px solid #ced4da; padding: 15px; border-radius: 10px; }
+        .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; text-transform: uppercase; }
+        #btnCapture { background: var(--primary); color: white; }
+        #btnCapture:disabled { background: #ccc; }
 
-        @media print { .no-print { display: none; } .box { box-shadow: none; border: none; padding: 0; } }
+        input, select { width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 15px; }
+        .form-verify { display: none; text-align: left; background: #fff3cd; padding: 15px; border-radius: 15px; margin-top: 15px; border: 1px solid #ffeeba; }
+        #preview-photo { width: 120px; height: 160px; object-fit: cover; border-radius: 8px; border: 3px solid #fff; display: block; margin: 0 auto 15px auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        .result-card { display: none; background: #fff; border-radius: 20px; padding: 15px; }
+        .info-row { border-bottom: 1px dashed #ddd; padding: 8px 0; font-size: 15px; color: #333; }
+        .info-row strong { color: var(--primary); }
+        
+        /* Cảnh báo GPS */
+        #gps-status { font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #666; }
+        .gps-error { color: var(--danger) !important; animation: blink 1s infinite; }
+        @keyframes blink { 50% { opacity: 0.5; } }
     </style>
 </head>
 <body>
 
-<div id="image-modal" onclick="this.style.display='none'"><img id="modal-img" src=""></div>
+<div class="app-container">
+    <div id="session-info" style="font-size: 11px; background: #333; color: white; padding: 8px; border-radius: 10px; margin-bottom: 5px;">Kết nối phiên...</div>
+    <div id="gps-status">📍 Đang xác định vị trí...</div>
 
-<div style="max-width: 1400px; margin: auto;">
-    <div class="box no-print">
-        <h2 style="margin:0; color:var(--primary);">HỆ THỐNG QUẢN TRỊ VDC - v1.5.0</h2>
-        <div class="nav-tabs" style="margin-top:15px;">
-            <button class="nav-link active" onclick="switchTab('tab-attendance')">📊 ĐIỂM DANH & QUẢN TRỊ</button>
-            <button class="nav-link" style="background:var(--purple); color:white;" onclick="switchTab('tab-audit'); renderAudit();">🔍 SOÁT VÉ NHANH</button>
-            <button class="nav-link" onclick="switchTab('tab-export')">📜 XUẤT BÁO CÁO</button>
+    <h3 style="margin:5px 0; color: var(--primary);">HEPC SAFETY AI</h3>
+    <p id="loading-msg" style="font-size:12px; color:var(--danger); font-weight:bold;">⌛ ĐANG TẢI AI...</p>
+
+    <div id="scanner-section">
+        <div id="video-container">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="overlay"></canvas>
+            <div class="face-guide"></div>
         </div>
+        <p id="scan-status" style="font-size:14px; font-weight:bold; color: #555;">Sẵn sàng quét...</p>
+        <button class="btn" id="btnCapture" onclick="checkFace()" disabled>XÁC NHẬN KHUÔN MẶT</button>
     </div>
 
-    <div id="tab-attendance" class="box no-print">
-        <div class="config-bar">
-            <div class="input-group"><label>ĐỊA ĐIỂM:</label><select id="cfg-location" onchange="loadClasses()"></select></div>
-            <div class="input-group"><label>LỚP:</label><select id="cfg-class" onchange="saveSession()"></select></div>
-            <div class="input-group"><label>NGÀY:</label><input type="text" id="cfg-date" onchange="saveSession()"></div>
-            <div class="input-group"><label>BUỔI:</label><select id="cfg-session" onchange="saveSession()"><option value="Sáng">Sáng</option><option value="Chiều">Chiều</option></select></div>
-        </div>
+    <div id="search-section" style="display:none; margin-top:15px; border-top: 1px dashed #ccc; padding-top: 15px;">
+        <p style="color:var(--danger); font-weight:bold;">⚠️ CHƯA CÓ DỮ LIỆU MẶT</p>
+        <input type="text" id="inputName" placeholder="Nhập đầy đủ Họ và Tên">
+        <button class="btn" style="background:#495057; color:white;" onclick="searchStudent()">TÌM THÔNG TIN</button>
+    </div>
 
-        <div class="control-panel">
-            <div style="flex: 2;">
-                <label>HỌ TÊN HỌC VIÊN BỔ SUNG ĐỘT XUẤT:</label>
-                <input type="text" id="add-new-name" placeholder="Nhập tên học viên...">
-            </div>
-            <button class="btn" style="background: var(--danger); height: 40px;" onclick="addSingleStudent()">➕ THÊM HỌC VIÊN</button>
-            <button class="btn" style="background: var(--primary); height: 40px;" onclick="toggleUploadArea()">📥 TẢI LÊN LIST (CSV)</button>
-        </div>
-
-        <div id="upload-container" class="upload-area hidden">
-            <label>DÁN DỮ LIỆU TỪ EXCEL VÀO ĐÂY (10 CỘT):</label>
-            <textarea id="csvData" style="height:100px; margin-bottom:10px;" placeholder="Dán dữ liệu tại đây..."></textarea>
-            <button class="btn" style="background: var(--success); width: 100%;" onclick="uploadData()">XÁC NHẬN NẠP DANH SÁCH</button>
-        </div>
+    <div id="verify-section" class="form-verify">
+        <img id="preview-photo" src="">
+        <input type="text" id="c1" disabled style="background:#eee; font-size:12px;">
+        <input type="text" id="c2" disabled style="background:#eee; font-weight:bold;">
         
-        <div id="stats" style="font-weight:bold; margin: 15px 0; color:var(--success); font-size:16px;"></div>
+        <select id="c3"><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select>
+        <input type="date" id="c4">
+        <select id="c5"><option value="5/5">5/5</option><option value="4/5">4/5</option><option value="3/5">3/5</option><option value="2/5">2/5</option><option value="1/5">1/5</option></select>
+        <input type="text" id="c6" placeholder="Chức danh">
+        <input type="text" id="c7" placeholder="Đơn vị công tác">
         
-        <table>
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Họ Tên</th>
-                    <th>Đơn vị</th>
-                    <th>Trạng thái</th>
-                    <th>Ảnh</th>
-                    <th>Giờ quét</th>
-                    <th style="background:var(--danger)">QUẢN LÝ DỮ LIỆU</th>
-                </tr>
-            </thead>
-            <tbody id="body-report"></tbody>
-        </table>
+        <button class="btn" id="btnSaveFinal" style="background:var(--success); color:white;" onclick="saveFinal()">XÁC NHẬN THÔNG TIN</button>
     </div>
 
-    <div id="tab-audit" class="box hidden no-print">
-        <div id="audit-container" class="audit-grid"></div>
-    </div>
-
-    <div id="tab-export" class="box hidden">
-        <div class="no-print">
-            <button class="btn" style="background:var(--success);" onclick="generateFullReport()">TẠO BÁO CÁO</button>
-            <button class="btn" style="background:#6c757d;" onclick="window.print()">IN PDF</button>
+    <div id="result-screen" class="result-card">
+        <img id="res-photo" src="">
+        <div style="text-align: left;">
+            <div class="info-row">Họ tên: <strong id="res-name"></strong></div>
+            <div class="info-row">Đơn vị: <strong id="res-unit"></strong></div>
         </div>
-        <div id="report-container">
-            <h2 style="text-align:center;">BẢNG TỔNG HỢP ĐIỂM DANH</h2>
-            <table id="full-report-table"><thead id="report-thead"></thead><tbody id="report-tbody"></tbody></table>
-        </div>
+        <div id="res-time" style="background:#d4edda; color:#155724; padding:10px; border-radius:10px; font-weight:bold; font-size:13px; margin-top:10px;"></div>
+        <button class="btn" style="background:#eee;" onclick="location.reload()">TIẾP TỤC</button>
     </div>
 </div>
 
@@ -124,144 +100,167 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function switchTab(id) {
-        document.getElementById('tab-attendance').classList.add('hidden');
-        document.getElementById('tab-audit').classList.add('hidden');
-        document.getElementById('tab-export').classList.add('hidden');
-        document.getElementById(id).classList.remove('hidden');
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+    let lastDescriptor, isDetecting, faceMatcher, session, currentStudent, capturedPhoto;
+    let userCoords = null;
+
+    // --- LOGIC GPS ---
+    function getDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371e3; // Bán kính trái đất (m)
+        const φ1 = lat1 * Math.PI/180;
+        const φ2 = lat2 * Math.PI/180;
+        const Δφ = (lat2-lat1) * Math.PI/180;
+        const Δλ = (lon2-lon1) * Math.PI/180;
+        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     }
 
-    function toggleUploadArea() {
-        const area = document.getElementById('upload-container');
-        area.classList.toggle('hidden');
+    function updateLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition(pos => {
+                userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                checkGPSStatus();
+            }, err => {
+                document.getElementById('gps-status').innerHTML = "⚠️ Vui lòng bật định vị GPS!";
+                document.getElementById('gps-status').className = "gps-error";
+            }, { enableHighAccuracy: true });
+        }
     }
 
-    function openLargeImg(src) {
-        document.getElementById('modal-img').src = src;
-        document.getElementById('image-modal').style.display = 'flex';
-    }
-
-    // --- LOGIC THÊM HỌC VIÊN BỔ SUNG ---
-    async function addSingleStudent() {
-        const name = document.getElementById('add-new-name').value.trim();
-        const loc = document.getElementById('cfg-location').value;
-        const cls = document.getElementById('cfg-class').value;
-
-        if (!name) return alert("Nhập tên học viên!");
+    function checkGPSStatus() {
+        if(!session || !session.lat || !session.lng || !userCoords) return;
+        const dist = getDistance(userCoords.lat, userCoords.lng, session.lat, session.lng);
+        const statusEl = document.getElementById('gps-status');
         
-        const snap = await db.ref(`master_list/${loc}/${cls}`).once('value');
-        const students = snap.val() || {};
-        let maxSTT = 0;
-        Object.keys(students).forEach(stt => { if(parseInt(stt) > maxSTT) maxSTT = parseInt(stt); });
-        
-        const nextSTT = maxSTT + 1;
-        await db.ref(`master_list/${loc}/${cls}/${nextSTT}`).set({
-            stt: nextSTT.toString(), name: name, location: loc, class: cls
-        });
-
-        alert("Đã thêm: " + name);
-        document.getElementById('add-new-name').value = '';
-        renderReport();
+        if(dist > 150) { // Giới hạn 150m
+            statusEl.innerHTML = `⚠️ Sai vị trí (${Math.round(dist)}m). Vui lòng đến lớp học!`;
+            statusEl.className = "gps-error";
+            return false;
+        } else {
+            statusEl.innerHTML = `📍 Vị trí hợp lệ (${Math.round(dist)}m)`;
+            statusEl.className = "";
+            return true;
+        }
     }
 
-    // --- LOGIC NẠP LIST CSV ---
-    async function uploadData() {
-        const raw = document.getElementById('csvData').value.trim();
-        if(!raw) return alert("Vui lòng dán dữ liệu!");
-        const rows = raw.split('\n');
-        for(let row of rows) {
-            const col = row.split('\t');
-            if(col.length >= 10) {
-                await db.ref(`master_list/${col[8]}/${col[9]}/${col[0]}`).set({
-                    stt: col[0], name: col[1], gender: col[2], dob: col[3], rank: col[4], 
-                    position: col[5], department: col[6], company: col[7], location: col[8], class: col[9]
-                });
+    // --- LOGIC AI ---
+    async function initAI() {
+        const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+        try {
+            await Promise.all([faceapi.nets.tinyFaceDetector.loadFromUri(URL), faceapi.nets.faceLandmark68Net.loadFromUri(URL), faceapi.nets.faceRecognitionNet.loadFromUri(URL)]);
+            document.getElementById('loading-msg').style.display = 'none';
+            db.ref('current_session').on('value', snap => {
+                session = snap.val();
+                if(session) document.getElementById('session-info').innerHTML = `LỚP: ${session.class} | BUỔI: ${session.session}`;
+            });
+            updateLocation();
+            startCamera();
+            loadFaceDB();
+        } catch (e) { document.getElementById('loading-msg').innerText = "❌ LỖI TẢI AI!"; }
+    }
+
+    async function startCamera() {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        const video = document.getElementById('video');
+        video.srcObject = s;
+        isDetecting = true;
+        video.onplay = () => {
+            const canvas = document.getElementById('overlay');
+            faceapi.matchDimensions(canvas, { width: 260, height: 347 });
+            setInterval(async () => {
+                if(!isDetecting) return;
+                const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                if(det) {
+                    faceapi.draw.drawDetections(canvas, faceapi.resizeResults(det, { width: 260, height: 347 }));
+                    lastDescriptor = det.descriptor;
+                    document.getElementById('btnCapture').disabled = false;
+                }
+            }, 600);
+        };
+    }
+
+    async function loadFaceDB() {
+        const snap = await db.ref('students').once('value');
+        const labeled = Object.values(snap.val() || {}).filter(u => u.descriptor).map(u => new faceapi.LabeledFaceDescriptors(u.stt.toString(), [new Float32Array(u.descriptor)]));
+        if(labeled.length > 0) faceMatcher = new faceapi.FaceMatcher(labeled, 0.55);
+    }
+
+    async function checkFace() {
+        if(!checkGPSStatus()) return alert("Hệ thống từ chối! Bạn đang đứng quá xa lớp học.");
+        
+        const canvas = document.createElement('canvas');
+        canvas.width = 450; canvas.height = 600;
+        const v = document.getElementById('video');
+        canvas.getContext('2d').drawImage(v, (v.videoWidth-(v.videoHeight*0.75))/2, v.videoHeight*0.05, v.videoHeight*0.75, v.videoHeight*0.95, 0, 0, 450, 600);
+        capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
+
+        if(faceMatcher && lastDescriptor) {
+            const match = faceMatcher.findBestMatch(lastDescriptor);
+            if(match.label !== 'unknown') {
+                const snap = await db.ref(`master_list/${session.location}/${session.class}/${match.label}`).once('value');
+                if(snap.val()) {
+                    currentStudent = snap.val();
+                    currentStudent.photo = capturedPhoto;
+                    return saveAttendance(currentStudent);
+                }
             }
         }
-        alert("Đã nạp danh sách thành công!");
-        document.getElementById('csvData').value = '';
-        toggleUploadArea();
-        loadClasses();
+        document.getElementById('scanner-section').style.display = 'none';
+        document.getElementById('search-section').style.display = 'block';
     }
 
-    // --- CÁC HÀM CÒN LẠI GIỮ NGUYÊN ---
-    async function deleteFaceID(stt, name) {
-        if(confirm(`Xóa Face ID của [${name}]?`)) {
-            await db.ref(`students/${stt}`).remove();
-            renderReport();
-        }
+    async function searchStudent() {
+        const name = document.getElementById('inputName').value.trim().toLowerCase();
+        const snap = await db.ref(`master_list/${session.location}/${session.class}`).once('value');
+        const found = Object.values(snap.val() || {}).find(u => u.name && u.name.toLowerCase() === name);
+        if(found) {
+            currentStudent = found;
+            document.getElementById('search-section').style.display = 'none';
+            document.getElementById('verify-section').style.display = 'block';
+            document.getElementById('preview-photo').src = capturedPhoto;
+            document.getElementById('c1').value = "STT: " + found.stt;
+            document.getElementById('c2').value = found.name;
+            document.getElementById('c3').value = found.gender || "Nam";
+            document.getElementById('c6').value = found.position || "";
+            document.getElementById('c7').value = found.department || "";
+        } else { alert("Không tìm thấy tên!"); }
     }
 
-    async function deleteAttendance(date, sess, stt) {
-        if(confirm("Xóa điểm danh buổi này?")) {
-            await db.ref(`attendance/${date}/${sess}/${stt}`).remove();
-            renderReport();
-        }
-    }
-
-    async function saveSession() {
-        const loc = document.getElementById('cfg-location').value;
-        const cls = document.getElementById('cfg-class').value;
-        const dateRaw = document.getElementById('cfg-date').value;
-        if(!loc || !cls) return;
-        await db.ref('current_session').set({
-            location: loc, class: cls, date: dateRaw.replace(/\//g, '-'), session: document.getElementById('cfg-session').value
-        });
-        renderReport();
-    }
-
-    async function loadClasses() {
-        const loc = document.getElementById('cfg-location').value;
-        const snap = await db.ref(`master_list/${loc}`).once('value');
-        document.getElementById('cfg-class').innerHTML = Object.keys(snap.val() || {}).map(c => `<option value="${c}">${c}</option>`).join('');
-        saveSession();
-    }
-
-    async function renderReport() {
-        const snap = await db.ref().once('value');
-        const data = snap.val() || {};
-        const sess = data.current_session || {};
-        const students = (data.master_list?.[sess.location]?.[sess.class]) || {};
-        const attendance = (data.attendance?.[sess.date]?.[sess.session]) || {};
-        const registered = data.students || {};
+    async function saveFinal() {
+        if(!checkGPSStatus()) return alert("Lỗi vị trí! Vui lòng không di chuyển xa khi đang xác nhận.");
+        const v4 = document.getElementById('c4').value;
+        if(!v4) return alert("Chọn Ngày sinh!");
         
-        const tbody = document.getElementById('body-report');
-        tbody.innerHTML = '';
-        let count = 0;
-
-        Object.values(students).sort((a,b)=>parseInt(a.stt)-parseInt(b.stt)).forEach(s => {
-            const att = attendance[s.stt];
-            const isReg = registered[s.stt];
-            if(att) count++;
-            tbody.innerHTML += `<tr>
-                <td>${s.stt}</td>
-                <td style="text-align:left;"><b>${s.name}</b><br><small style="color:${isReg?'blue':'gray'}">${isReg?'● Đã có FaceID':'○ Chưa đăng ký'}</small></td>
-                <td style="text-align:left;">${s.department || ""}</td>
-                <td>${att ? '<b style="color:green">CÓ MẶT</b>' : '<i style="color:gray">Vắng</i>'}</td>
-                <td>${att ? `<img src="${att.photo}" width="40" height="53" onclick="openLargeImg(this.src)" style="cursor:pointer">` : ''}</td>
-                <td>${att ? att.time.split(' ngày ')[0] : ''}</td>
-                <td>
-                    <button class="btn" style="background:#6c757d" onclick="deleteAttendance('${sess.date}','${sess.session}','${s.stt}')">Xóa Buổi</button>
-                    <button class="btn" style="background:var(--danger)" onclick="deleteFaceID('${s.stt}','${s.name}')">XÓA FACE ID</button>
-                </td>
-            </tr>`;
-        });
-        document.getElementById('stats').innerText = `Hiện diện: ${count}/${Object.keys(students).length}`;
+        const d = new Date(v4);
+        const data = {
+            ...currentStudent,
+            gender: document.getElementById('c3').value,
+            dob: `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`,
+            rank: document.getElementById('c5').value,
+            position: document.getElementById('c6').value.trim(),
+            department: document.getElementById('c7').value.trim(),
+            descriptor: Array.from(lastDescriptor),
+            photo: capturedPhoto,
+            time: new Date().toLocaleTimeString('vi-VN'),
+            coords: userCoords // Lưu tọa độ lúc điểm danh để hậu kiểm
+        };
+        await db.ref('students/' + data.stt).set(data);
+        saveAttendance(data);
     }
 
-    async function init() {
-        const now = new Date();
-        document.getElementById('cfg-date').value = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
-        db.ref('master_list').once('value', snap => {
-            const locS = document.getElementById('cfg-location');
-            locS.innerHTML = Object.keys(snap.val() || {}).map(l => `<option value="${l}">${l}</option>`).join('');
-            if(locS.value) loadClasses();
-        });
-        db.ref('attendance').on('value', () => renderReport());
+    async function saveAttendance(st) {
+        const timeStr = new Date().toLocaleTimeString('vi-VN') + " ngày " + new Date().toLocaleDateString('vi-VN');
+        await db.ref(`attendance/${session.date}/${session.session}/${st.stt}`).set({ name: st.name, time: timeStr, photo: st.photo || "" });
+        isDetecting = false;
+        document.getElementById('scanner-section').style.display = 'none';
+        document.getElementById('verify-section').style.display = 'none';
+        document.getElementById('result-screen').style.display = 'block';
+        document.getElementById('res-photo').src = st.photo || "";
+        document.getElementById('res-name').innerText = st.name.toUpperCase();
+        document.getElementById('res-unit').innerText = st.department || "";
+        document.getElementById('res-time').innerText = "THÀNH CÔNG: " + timeStr;
     }
-    init();
+    initAI();
 </script>
 </body>
 </html>
