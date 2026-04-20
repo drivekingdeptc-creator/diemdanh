@@ -3,180 +3,76 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VDC SAFETY - ĐIỂM DANH & ĐĂNG KÝ</title>
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
+    <title>VDC Safety - Face ID 4.0</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; background: #004085; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
-        .camera-box { position: relative; width: 300px; height: 380px; border: 5px solid white; border-radius: 150px; overflow: hidden; background: #000; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
-        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        #status { margin-top: 15px; font-weight: bold; color: #ffc107; text-align: center; min-height: 20px; }
-        
-        .btn { padding: 12px 25px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 16px; }
-        .btn-reg { background: #28a745; color: white; display: none; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-        /* Form đăng ký */
-        #reg-form { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        input { width: 80%; padding: 12px; margin: 10px 0; border-radius: 8px; border: none; font-size: 16px; }
-        #search-results { width: 85%; max-height: 200px; overflow-y: auto; background: white; color: black; border-radius: 8px; }
-        .res-item { padding: 10px; border-bottom: 1px solid #eee; cursor: pointer; }
-
-        #success { display: none; position: fixed; inset: 0; background: rgba(0,64,133,0.95); z-index: 300; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .face-oval { border: 4px dashed #3b82f6; border-radius: 50% / 60%; }
+        .scanning { border-color: #10b981; box-shadow: 0 0 20px #10b981; }
     </style>
 </head>
-<body>
-    <h2 style="margin-bottom: 10px;">VDC SAFETY</h2>
-    <div class="camera-box">
-        <video id="video" autoplay muted playsinline></video>
-    </div>
-    <div id="status">⏳ Đang tải mô hình AI...</div>
-    
-    <button id="btn-capture" class="btn btn-reg" onclick="openRegForm()">📸 CHƯA CÓ MẶT? ĐĂNG KÝ NGAY</button>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
+    <header class="text-center mb-6">
+        <h1 class="text-2xl font-bold text-blue-900">VDC SAFETY - FACE ID 4.0</h1>
+        <p class="text-gray-600 italic">Hệ thống điểm danh thông minh AI</p>
+    </header>
 
-    <div id="reg-form">
-        <h3>XÁC MINH DANH TÍNH</h3>
-        <p style="font-size: 12px; opacity: 0.8;">Nhập tên để tìm bạn trong danh sách lớp</p>
-        <input type="text" id="input-name" placeholder="Gõ tên của bạn..." oninput="searchStudent()">
-        <div id="search-results"></div>
-        <button class="btn" style="background:#666; color:white;" onclick="closeRegForm()">ĐÓNG</button>
-    </div>
+    <main class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
+        <div class="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden mb-4">
+            <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
+            <div id="scanner-frame" class="face-oval absolute inset-x-10 inset-y-16 pointer-events-none transition-all duration-300"></div>
+            <div id="status-overlay" class="absolute bottom-4 left-0 right-0 text-center text-white text-sm bg-black/50 py-1">
+                Đang khởi tạo AI...
+            </div>
+        </div>
 
-    <div id="success">
-        <h1 style="font-size: 80px;">✅</h1>
-        <h2 id="user-name">XIN CHÀO!</h2>
-        <p>Điểm danh thành công</p>
-    </div>
+        <div id="greeting-area" class="hidden text-center mb-4">
+            <h2 class="text-xl font-semibold text-green-600">Chào anh <span id="user-name">...</span>!</h2>
+            <p class="text-sm text-gray-500">Hệ thống đã nhận diện được khuôn mặt của bạn.</p>
+        </div>
 
-<script>
-    const firebaseConfig = { databaseURL: "https://hepc-ed95d-default-rtdb.firebaseio.com" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-    const video = document.getElementById('video');
-    const btnCap = document.getElementById('btn-capture');
-    let faceMatcher = null;
-    let isProcessing = false;
-    let fullStudentList = {};
-    let currentDescriptor = null; // Lưu đặc điểm khuôn mặt lúc chụp
+        <div id="registration-form" class="hidden space-y-3 mb-4">
+            <p class="text-orange-600 font-medium text-sm">Dữ liệu mới! Vui lòng hoàn tất thông tin:</p>
+            <input type="text" id="reg-name" placeholder="Họ và tên (Gợi ý...)" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500">
+            <input type="text" id="reg-unit" placeholder="Đơn vị công tác" class="w-full p-3 border rounded-lg">
+            <div class="flex gap-2">
+                <input type="date" id="reg-dob" class="w-1/2 p-3 border rounded-lg">
+                <button onclick="submitInfo()" class="w-1/2 bg-blue-600 text-white rounded-lg font-bold">XÁC NHẬN</button>
+            </div>
+        </div>
 
-    // 1. KHỞI TẠO AI & CAMERA
-    async function init() {
-        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-        try {
-            await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-                faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-                faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-            ]);
-            
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-            video.srcObject = stream;
-            loadData();
-        } catch (e) { document.getElementById('status').innerText = "❌ Lỗi: Không thể khởi động Camera/AI"; }
-    }
+        <button id="btn-capture" class="w-full py-4 bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
+            XÁC NHẬN KHUÔN MẶT
+        </button>
+    </main>
 
-    // 2. TẢI DỮ LIỆU FACE ID VÀ DANH SÁCH TỔNG
-    async function loadData() {
-        const [faceSnap, masterSnap] = await Promise.all([
-            db.ref('students').once('value'),
-            db.ref('master_list_total').once('value')
-        ]);
+    <footer class="mt-8 text-gray-400 text-xs">
+        Powered by VDC Safety - Version 4.0.0
+    </footer>
 
-        const faceData = faceSnap.val() || {};
-        fullStudentList = masterSnap.val() || {};
+    <script>
+        // Logic điều khiển Camera & AI sẽ được viết tiếp tại đây
+        const video = document.getElementById('video');
+        const frame = document.getElementById('scanner-frame');
 
-        const labels = Object.keys(faceData);
-        if (labels.length > 0) {
-            const descriptors = labels.map(l => new faceapi.LabeledFaceDescriptors(l, faceData[l].descriptors.map(d => new Float32Array(d))));
-            faceMatcher = new faceapi.FaceMatcher(descriptors, 0.55);
+        async function startVideo() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = stream;
+                document.getElementById('status-overlay').innerText = "AI sẵn sàng - Đưa mặt vào khung";
+            } catch (err) {
+                console.error("Lỗi truy cập camera: ", err);
+            }
         }
-        
-        document.getElementById('status').innerText = "✨ ĐANG QUÉT KHUÔN MẶT...";
-        startDetection();
-    }
 
-    // 3. VÒNG LẶP NHẬN DIỆN
-    function startDetection() {
-        setInterval(async () => {
-            if (isProcessing) return;
-            const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-            
-            if (det) {
-                currentDescriptor = det.descriptor; // Cập nhật liên tục để dùng khi đăng ký
-                if (faceMatcher) {
-                    const match = faceMatcher.findBestMatch(det.descriptor);
-                    if (match.label !== 'unknown') {
-                        isProcessing = true;
-                        saveAttendance(match.label);
-                        return;
-                    }
-                }
-                btnCap.style.display = 'block'; // Hiện nút đăng ký nếu không nhận ra
-                document.getElementById('status').innerText = "❓ KHUÔN MẶT LẠ";
-            } else {
-                btnCap.style.display = 'none';
-                document.getElementById('status').innerText = "🔍 ĐANG TÌM KHUÔN MẶT...";
-            }
-        }, 700);
-    }
-
-    // 4. TÌM KIẾM HỌC VIÊN TRONG DANH SÁCH TỔNG
-    function searchStudent() {
-        const query = document.getElementById('input-name').value.toLowerCase();
-        const resultsBox = document.getElementById('search-results');
-        resultsBox.innerHTML = '';
-        if (query.length < 2) return;
-
-        Object.values(fullStudentList).forEach(s => {
-            if (s.name.toLowerCase().includes(query)) {
-                const div = document.createElement('div');
-                div.className = 'res-item';
-                div.innerHTML = `<b>${s.name}</b> - ${s.department}`;
-                div.onclick = () => registerFace(s.stt, s.name);
-                resultsBox.appendChild(div);
-            }
-        });
-    }
-
-    // 5. ĐĂNG KÝ FACE ID MỚI & ĐIỂM DANH LUÔN
-    async function registerFace(stt, name) {
-        if (!currentDescriptor) return alert("Không thấy khuôn mặt!");
-        isProcessing = true;
-        document.getElementById('reg-form').style.display = 'none';
-        document.getElementById('status').innerText = "🔄 Đang lưu Face ID...";
-
-        // Lưu mẫu khuôn mặt
-        await db.ref(`students/${stt}`).set({
-            name: name,
-            descriptors: [Array.from(currentDescriptor)]
+        // Giả lập logic xử lý
+        document.getElementById('btn-capture').addEventListener('click', () => {
+            frame.classList.add('scanning');
+            // Logic: Kiểm tra Face ID trong Database -> Nếu có: Hiện Chào -> Nếu không: Hiện Form Đăng ký
+            document.getElementById('registration-form').classList.remove('hidden');
         });
 
-        // Điểm danh ngay sau khi đăng ký
-        saveAttendance(stt);
-    }
-
-    async function saveAttendance(id) {
-        const sessSnap = await db.ref('current_session').once('value');
-        const sess = sessSnap.val();
-        
-        const canvas = document.createElement('canvas');
-        canvas.width = 300; canvas.height = 380;
-        canvas.getContext('2d').drawImage(video, 0, 0, 300, 380);
-        const photo = canvas.toDataURL('image/jpeg', 0.6);
-
-        await db.ref(`attendance/${sess.date}/${sess.session}/${id}`).set({
-            stt: id, time: new Date().toLocaleTimeString('vi-VN') + " " + new Date().toLocaleDateString('vi-VN'), photo: photo
-        });
-
-        document.getElementById('user-name').innerText = "CHÀO " + id;
-        document.getElementById('success').style.display = 'flex';
-        setTimeout(() => { location.reload(); }, 2500);
-    }
-
-    function openRegForm() { document.getElementById('reg-form').style.display = 'flex'; }
-    function closeRegForm() { document.getElementById('reg-form').style.display = 'none'; }
-    window.onload = init;
-</script>
+        window.onload = startVideo;
+    </script>
 </body>
 </html>
