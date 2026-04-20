@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>VDC Admin v1.8.1 - Progress & Multi-Class</title>
+    <title>VDC Admin v1.8.2 - Hệ thống Quản trị OSH</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,28 +15,27 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .nav-btn.active { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
         
-        /* Sidebar Toggle */
         #sidebar { transition: all 0.3s ease; width: 260px; }
         #sidebar.collapsed { width: 80px; }
         #sidebar.collapsed .nav-text, #sidebar.collapsed .logo-text { display: none; }
         #sidebar.collapsed .nav-btn { justify-content: center; padding: 12px; }
 
         /* OVERLAY LOADING */
-        #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(30, 41, 59, 0.8); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
-        .spinner { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.2); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s infinite linear; }
+        #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(30, 41, 59, 0.85); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .spinner { width: 60px; height: 60px; border: 6px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s infinite linear; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Popup Xem ảnh */
-        .popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center; }
-        .popup-content { max-width: 90%; max-height: 85%; border-radius: 20px; border: 4px solid white; }
+        .popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; align-items: center; justify-content: center; }
+        .popup-content { max-width: 90%; max-height: 85%; border-radius: 20px; border: 5px solid white; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body class="flex min-h-screen">
 
     <div id="loading-overlay">
         <div class="spinner mb-4"></div>
-        <p class="text-white font-bold tracking-widest text-sm uppercase">VDC Safety đang xử lý dữ liệu...</p>
-        <p class="text-blue-400 text-xs mt-2 italic">Vui lòng không tắt trình duyệt</p>
+        <p class="text-white font-black tracking-widest text-sm uppercase">VDC Safety đang xử lý dữ liệu...</p>
+        <p class="text-blue-400 text-xs mt-2 italic font-bold">Vui lòng chờ trong giây lát</p>
     </div>
 
     <div id="imagePopup" class="popup-overlay" onclick="this.style.display='none'">
@@ -47,28 +46,27 @@
         <div class="p-6 border-b border-slate-700 flex items-center justify-between">
             <div class="flex items-center gap-3 overflow-hidden">
                 <div class="w-10 h-10 bg-blue-600 rounded-xl flex-shrink-0 flex items-center justify-center font-black text-xl">V</div>
-                <span class="logo-text font-bold text-lg uppercase tracking-tighter">VDC Safety</span>
+                <span class="logo-text font-bold text-lg uppercase tracking-tighter tracking-widest">VDC Admin</span>
             </div>
             <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white"><i class="fas fa-bars"></i></button>
         </div>
         <nav class="flex-1 p-4 space-y-2 mt-4">
             <button onclick="switchTab('tab-classes', this)" class="nav-btn active w-full flex items-center p-3 rounded-xl transition-all">
-                <i class="fas fa-university w-6 text-center"></i> <span class="nav-text ml-2">Lớp học</span>
+                <i class="fas fa-university w-6 text-center"></i> <span class="nav-text ml-2 font-bold">Lớp học</span>
             </button>
             <button onclick="switchTab('tab-attendance', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-check-double w-6 text-center"></i> <span class="nav-text ml-2">Điểm danh</span>
+                <i class="fas fa-check-double w-6 text-center"></i> <span class="nav-text ml-2 font-bold">Điểm danh</span>
             </button>
             <button onclick="switchTab('tab-faces', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-user-shield w-6 text-center"></i> <span class="nav-text ml-2">Quản lý Face ID</span>
+                <i class="fas fa-user-shield w-6 text-center"></i> <span class="nav-text ml-2 font-bold">Quản lý Face ID</span>
             </button>
             <button onclick="switchTab('tab-upload', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-plus-circle w-6 text-center"></i> <span class="nav-text ml-2">Nạp danh sách</span>
+                <i class="fas fa-plus-circle w-6 text-center"></i> <span class="nav-text ml-2 font-bold">Nạp danh sách</span>
             </button>
         </nav>
     </aside>
 
     <main class="flex-1 p-6 overflow-hidden">
-
         <section id="tab-classes" class="tab-content active">
             <h2 class="text-2xl font-black text-slate-800 uppercase mb-6">🏫 Danh sách lớp huấn luyện</h2>
             <div id="class-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
@@ -78,7 +76,7 @@
             <div class="flex justify-between items-center mb-6">
                 <div>
                     <h2 class="text-2xl font-black text-slate-800 uppercase">📊 Dữ liệu điểm danh</h2>
-                    <p id="active-class-tag" class="text-blue-600 font-bold text-xs uppercase mt-1"></p>
+                    <p id="active-class-tag" class="text-blue-600 font-black text-[10px] uppercase mt-1 tracking-wider"></p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="setFilter('absent')" class="px-4 py-2 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase">Vắng: <span id="count-absent">0</span></button>
@@ -89,10 +87,12 @@
             <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
                 <table class="w-full text-left text-[12px]">
                     <thead>
-                        <tr class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px]">
+                        <tr class="bg-slate-50 text-slate-400 font-bold uppercase text-[9px]">
                             <th class="p-4 w-10 text-center">TT</th>
                             <th class="p-4 w-12 text-center">Ảnh</th>
                             <th class="p-4">Học viên</th>
+                            <th class="p-4">Ngày sinh</th>
+                            <th class="p-4">Bậc AT</th>
                             <th class="p-4">Đơn vị</th>
                             <th class="p-4">Giờ quét</th>
                             <th class="p-4 w-10 text-center">Hủy</th>
@@ -105,11 +105,11 @@
 
         <section id="tab-faces" class="tab-content">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-black text-slate-800 uppercase">🛡️ Quản lý khuôn mặt</h2>
-                <div class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold text-xs">Tổng: <span id="total-faces">0</span></div>
+                <h2 class="text-2xl font-black text-slate-800 uppercase">🛡️ Quản lý Face ID học viên</h2>
+                <div class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase">Tổng: <span id="total-faces">0</span></div>
             </div>
             <div class="bg-white p-4 rounded-2xl shadow-sm border mb-6">
-                <input type="text" id="face-search" oninput="renderFaceList()" placeholder="Tìm tên học viên..." class="w-full p-4 bg-slate-50 border rounded-xl outline-none font-bold">
+                <input type="text" id="face-search" oninput="renderFaceList()" placeholder="Tìm tên học viên để xóa Face ID đăng ký nhầm..." class="w-full p-4 bg-slate-50 border rounded-xl outline-none font-bold focus:ring-2 focus:ring-blue-500">
             </div>
             <div id="face-list-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
         </section>
@@ -118,11 +118,12 @@
             <h2 class="text-2xl font-black text-slate-800 uppercase mb-6">📥 Nạp lớp mới</h2>
             <div class="bg-white p-8 rounded-[2rem] shadow-sm border space-y-4">
                 <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="new-class-name" class="p-4 bg-slate-50 border rounded-2xl outline-none font-bold" placeholder="Tên lớp (VD: ATĐ Nhóm 3)">
-                    <input type="text" id="new-location" class="p-4 bg-slate-50 border rounded-2xl outline-none" placeholder="Địa điểm (VD: HEPC)">
+                    <input type="text" id="new-class-name" class="p-4 bg-slate-50 border rounded-2xl outline-none font-bold" placeholder="Tên lớp (VD: PC Vĩnh Long - Lớp 1)">
+                    <input type="text" id="new-location" class="p-4 bg-slate-50 border rounded-2xl outline-none" placeholder="Địa điểm tập huấn">
                 </div>
-                <textarea id="csvData" rows="10" class="w-full p-4 bg-slate-50 border rounded-2xl font-mono text-[10px]" placeholder="Dán dữ liệu Excel (dd/MM/yyyy) tại đây..."></textarea>
-                <button onclick="uploadData()" id="btnUpload" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-lg shadow-xl hover:bg-blue-600 transition-all">LƯU TRỮ LỚP HỌC</button>
+                <p class="text-[10px] text-red-500 font-bold uppercase px-1"><i class="fas fa-info-circle mr-1"></i> Chấp nhận mọi ký tự đặc biệt trong tên lớp.</p>
+                <textarea id="csvData" rows="10" class="w-full p-4 bg-slate-50 border rounded-2xl font-mono text-[10px]" placeholder="Dán dữ liệu Excel 10 cột (Ngày sinh dd/MM/yyyy) tại đây..."></textarea>
+                <button onclick="uploadData()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg shadow-xl hover:bg-blue-600 transition-all uppercase tracking-widest">LƯU TRỮ LỚP HỌC</button>
             </div>
         </section>
     </main>
@@ -140,11 +141,9 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function showLoading(status) {
-        document.getElementById('loading-overlay').style.display = status ? 'flex' : 'none';
-    }
-
+    function showLoading(status) { document.getElementById('loading-overlay').style.display = status ? 'flex' : 'none'; }
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+    function openPopup(src) { document.getElementById('popupImg').src = src; document.getElementById('imagePopup').style.display = 'flex'; }
 
     function switchTab(id, btn) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -156,40 +155,39 @@
         if(id === 'tab-classes') renderClassList();
     }
 
-    // --- NẠP DỮ LIỆU CÓ PROGRESS BAR ---
+    // NẠP DỮ LIỆU LỚP
     async function uploadData() {
-        const className = document.getElementById('new-class-name').value.trim();
+        let className = document.getElementById('new-class-name').value.trim();
         const loc = document.getElementById('new-location').value.trim();
         const raw = document.getElementById('csvData').value.trim();
-        if(!className || !raw) return alert("Vui lòng nhập tên lớp và dữ liệu!");
+        if(!className || !raw) return alert("Thiếu tên lớp hoặc dữ liệu!");
 
-        showLoading(true); // BẬT VÒNG XOAY
+        // LÀM SẠCH KÝ TỰ ĐẶC BIỆT CHO FIREBASE PATH
+        const safeClassName = className.replace(/[\.\#\$\[\]]/g, '-');
+        showLoading(true);
 
         const students = {};
         raw.split('\n').forEach(line => {
             const c = line.split('\t');
             if(c.length >= 2) {
                 const stt = c[0].trim();
-                students[stt] = { stt: stt, name: c[1]||"", gender: c[2]||"", dob: c[3]||"", rank: c[4]||"", position: c[5]||"", department: c[6]||"", company: c[7]||"" };
+                const safeSTT = stt.replace(/[\.\#\$\[\]]/g, '-');
+                students[safeSTT] = { stt: stt, name: c[1]||"", gender: c[2]||"", dob: c[3]||"", rank: c[4]||"", position: c[5]||"", department: c[6]||"", company: c[7]||"" };
             }
         });
 
         try {
-            await db.ref(`classes/${className}`).set({ name: className, location: loc, students: students, createdAt: new Date().toLocaleDateString('vi-VN') });
+            await db.ref(`classes/${safeClassName}`).set({ name: className, location: loc, students: students, createdAt: new Date().toLocaleDateString('vi-VN') });
             setTimeout(() => {
-                showLoading(false); // TẮT VÒNG XOAY
-                alert("Đã nạp danh sách lớp " + className + " thành công!");
+                showLoading(false);
+                alert("Nạp thành công lớp: " + className);
                 document.getElementById('csvData').value = "";
                 renderClassList();
                 switchTab('tab-classes', document.querySelector('[onclick*="tab-classes"]'));
             }, 500);
-        } catch (e) {
-            showLoading(false);
-            alert("Lỗi: " + e.message);
-        }
+        } catch (e) { showLoading(false); alert("Lỗi nạp liệu: " + e.message); }
     }
 
-    // --- CÁC HÀM QUẢN LÝ KHÁC ---
     async function renderClassList() {
         const snap = await db.ref('classes').once('value');
         const container = document.getElementById('class-list-container');
@@ -198,10 +196,10 @@
             const cls = snap.val()[id];
             container.innerHTML += `
                 <div class="bg-white p-5 rounded-3xl border shadow-sm relative group">
-                    <button onclick="deleteClass('${id}')" class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
+                    <button onclick="deleteClass('${id}')" class="absolute top-3 right-3 text-slate-200 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
                     <h3 class="font-black text-slate-800 text-sm uppercase truncate pr-6">${cls.name}</h3>
-                    <p class="text-[10px] text-slate-400 mt-1 uppercase">${cls.location}</p>
-                    <button onclick="activateClass('${id}')" class="w-full mt-4 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-bold uppercase">Mở điểm danh</button>
+                    <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tight">${cls.location}</p>
+                    <button onclick="activateClass('${id}')" class="w-full mt-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700">Mở điểm danh</button>
                 </div>`;
         });
     }
@@ -212,12 +210,56 @@
         const cls = snap.val(); const now = new Date();
         const dateStr = `${now.getDate().toString().padStart(2,'0')}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getFullYear()}`;
         await db.ref('current_session').set({ class: cls.name, location: cls.location, date: dateStr, session: now.getHours() < 12 ? "Sáng" : "Chiều", source: id });
-        setTimeout(() => {
-            showLoading(false);
-            renderAttendance(); switchTab('tab-attendance', document.querySelector('[onclick*="tab-attendance"]'));
-        }, 300);
+        setTimeout(() => { showLoading(false); renderAttendance(); switchTab('tab-attendance', document.querySelector('[onclick*="tab-attendance"]')); }, 300);
     }
 
+    // ĐIỂM DANH CHI TIẾT
+    let currentFilter = 'all';
+    function setFilter(type) { currentFilter = type; renderAttendance(); }
+    async function renderAttendance() {
+        const snap = await db.ref().once('value');
+        const data = snap.val() || {};
+        const sess = data.current_session || {};
+        if(!sess.class) return;
+        document.getElementById('active-class-tag').innerText = `PHÊN: ${sess.class} | ${sess.date} (${sess.session})`;
+        
+        const students = data.classes[sess.source]?.students || {};
+        const globalProfile = data.students || {};
+        const attRecords = data.attendance?.[sess.date]?.[sess.session] || {};
+        
+        let present = 0; let html = '';
+        Object.values(students).sort((a,b)=>a.stt-b.stt).forEach(s => {
+            const hasAtt = attRecords[s.stt];
+            const profile = globalProfile[s.stt] || s;
+            if(hasAtt) present++;
+            if(currentFilter === 'present' && !hasAtt) return;
+            if(currentFilter === 'absent' && hasAtt) return;
+
+            html += `
+                <tr class="hover:bg-slate-50 transition-all ${!hasAtt ? 'opacity-50' : ''}">
+                    <td class="p-4 text-center text-slate-400 font-mono">${s.stt}</td>
+                    <td class="p-2 text-center">
+                        ${hasAtt ? `<img src="${hasAtt.photo}" onclick="openPopup(this.src)" class="w-10 h-12 object-cover rounded mx-auto border cursor-zoom-in hover:scale-110 transition-all">` : '<i class="fas fa-user-clock text-slate-100 text-lg"></i>'}
+                    </td>
+                    <td class="p-4 font-black text-slate-700 uppercase">${s.name}</td>
+                    <td class="p-4 font-bold text-slate-500">${profile.dob || '-'}</td>
+                    <td class="p-4 text-center"><span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-black text-[10px]">${profile.rank || '-'}</span></td>
+                    <td class="p-4 text-slate-500 truncate max-w-[150px] font-medium">${profile.department || profile.company || '-'}</td>
+                    <td class="p-4 font-mono text-blue-500 font-black">${hasAtt ? hasAtt.time.split(' ngày ')[0] : '--:--'}</td>
+                    <td class="p-4 text-center">
+                        ${hasAtt ? `<i class="fas fa-times-circle text-red-200 hover:text-red-600 cursor-pointer text-lg" onclick="deleteAtt('${sess.date}','${sess.session}','${s.stt}')"></i>` : ''}
+                    </td>
+                </tr>`;
+        });
+        document.getElementById('attendance-body').innerHTML = html;
+        document.getElementById('count-all').innerText = Object.keys(students).length;
+        document.getElementById('count-present').innerText = present;
+        document.getElementById('count-absent').innerText = Object.keys(students).length - present;
+    }
+
+    async function deleteAtt(date, sess, stt) { if(confirm("Hủy kết quả điểm danh này?")) { await db.ref(`attendance/${date}/${sess}/${stt}`).remove(); renderAttendance(); } }
+
+    // FACE ID MANAGEMENT
     async function renderFaceList() {
         const snap = await db.ref('students').once('value');
         const faces = snap.val() || {};
@@ -230,18 +272,17 @@
             count++;
             container.innerHTML += `
                 <div class="bg-white p-3 rounded-2xl border shadow-sm flex flex-col items-center text-center">
-                    <img src="${s.photo}" class="w-16 h-20 object-cover rounded-lg mb-2">
-                    <div class="text-[9px] font-black uppercase text-slate-700 truncate w-full">${s.name}</div>
-                    <button onclick="deleteFace('${s.stt}')" class="mt-2 text-red-400 text-[9px] uppercase font-bold hover:underline">Xóa Face ID</button>
+                    <img src="${s.photo}" class="w-16 h-20 object-cover rounded-xl mb-2 bg-slate-50 border">
+                    <div class="text-[9px] font-black uppercase text-slate-700 truncate w-full px-1">${s.name}</div>
+                    <button onclick="deleteFace('${s.stt}')" class="mt-3 w-full py-1.5 bg-red-50 text-red-500 rounded-lg text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Xóa Face ID</button>
                 </div>`;
         });
         document.getElementById('total-faces').innerText = count;
     }
 
-    async function deleteFace(id) { if(confirm("Xóa dữ liệu khuôn mặt học viên này?")) { await db.ref(`students/${id}`).remove(); renderFaceList(); } }
-    async function deleteClass(id) { if(confirm("Xóa vĩnh viễn lớp này?")) { await db.ref(`classes/${id}`).remove(); renderClassList(); } }
+    async function deleteFace(id) { if(confirm("Xóa dữ liệu khuôn mặt?\nHọc viên sẽ phải đăng ký lại từ đầu.")) { await db.ref(`students/${id}`).remove(); renderFaceList(); } }
+    async function deleteClass(id) { if(confirm("Bạn có chắc muốn xóa vĩnh viễn lớp này?")) { await db.ref(`classes/${id}`).remove(); renderClassList(); } }
     
-    // Khởi tạo
     window.onload = () => { renderClassList(); db.ref('attendance').on('value', () => renderAttendance()); };
 </script>
 </body>
