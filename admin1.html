@@ -2,156 +2,98 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>VDC Admin v1.5.0 - Professional OSH Management</title>
+    <title>VDC Admin v1.6.0 - Multi-Class Management</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --primary: #1e293b; --accent: #3b82f6; }
-        body { background: #f1f5f9; }
-        /* Điều hướng tab */
+        body { background: #f1f5f9; font-family: 'Inter', sans-serif; }
         .tab-content { display: none; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .nav-btn.active { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
-        
-        /* Table Custom */
-        table { width: 100%; border-collapse: collapse; }
-        th { background: #f8fafc; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
-        
-        /* Audit Card */
-        .audit-card img { height: 240px; object-fit: cover; border-radius: 8px; transition: 0.3s; }
-        .audit-card:hover img { transform: scale(1.02); }
-
-        @media print { .no-print { display: none !important; } .print-only { display: block !important; } body { background: white; padding: 0; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .nav-btn.active { background: var(--accent); color: white; shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body class="flex min-h-screen">
 
-    <aside class="w-72 bg-[#1e293b] text-white flex flex-col sticky top-0 h-screen shadow-2xl no-print">
+    <aside class="w-64 bg-[#1e293b] text-white flex flex-col sticky top-0 h-screen no-print shadow-2xl">
         <div class="p-6 border-b border-slate-700">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center font-black text-xl">V</div>
-                <div>
-                    <span class="font-bold text-lg tracking-tight uppercase block">VDC Safety</span>
-                    <span class="text-[10px] text-blue-400 tracking-[0.2em] uppercase font-bold">Admin v1.5.0</span>
-                </div>
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-black text-xl">V</div>
+                <span class="font-bold text-lg uppercase">VDC Safety</span>
             </div>
+            <p class="text-[10px] text-blue-400 mt-1 font-bold tracking-widest">VERSION 1.6.0</p>
         </div>
-        
         <nav class="flex-1 p-4 space-y-2 mt-4">
-            <button onclick="switchTab('tab-attendance', this)" class="nav-btn active w-full flex items-center p-3 rounded-xl transition-all hover:bg-slate-800">
-                <i class="fas fa-th-large mr-3 w-5"></i> <span class="font-medium">Quản lý phiên</span>
+            <button onclick="switchTab('tab-classes', this)" class="nav-btn active w-full flex items-center p-3 rounded-xl transition-all hover:bg-slate-800">
+                <i class="fas fa-university mr-3 w-5"></i> <span>Quản lý lớp học</span>
             </button>
-            <button onclick="switchTab('tab-audit', this); renderAudit();" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-camera mr-3 w-5"></i> <span class="font-medium">Soát vé nhanh</span>
-            </button>
-            <button onclick="switchTab('tab-export', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-file-export mr-3 w-5"></i> <span class="font-medium">Xuất báo cáo</span>
+            <button onclick="switchTab('tab-attendance', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
+                <i class="fas fa-check-double mr-3 w-5"></i> <span>Điểm danh thực tế</span>
             </button>
             <button onclick="switchTab('tab-upload', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-cloud-upload-alt mr-3 w-5"></i> <span class="font-medium">Nạp danh sách</span>
+                <i class="fas fa-plus-circle mr-3 w-5"></i> <span>Nạp lớp mới</span>
             </button>
         </nav>
-
-        <div class="p-4 border-t border-slate-700">
-            <div class="flex items-center gap-3 p-3 bg-slate-800/50 rounded-2xl">
-                <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center font-bold text-sm">AT</div>
-                <div class="overflow-hidden">
-                    <p class="text-xs font-bold truncate uppercase text-blue-100">Mr. An Toàn</p>
-                    <p class="text-[9px] text-slate-400 tracking-wider">Expert OSH</p>
-                </div>
-            </div>
-        </div>
     </aside>
 
     <main class="flex-1 p-8 overflow-y-auto">
 
-        <section id="tab-attendance" class="tab-content active">
-            <div class="flex justify-between items-center mb-6 no-print">
-                <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">📊 Quản lý phiên huấn luyện</h2>
-            </div>
-
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6 no-print">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase">Địa điểm</label>
-                        <select id="cfg-location" onchange="loadClasses()" class="w-full mt-1 p-2 bg-slate-50 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"></select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase">Lớp học</label>
-                        <select id="cfg-class" onchange="saveSession()" class="w-full mt-1 p-2 bg-slate-50 border rounded-lg outline-none focus:ring-2 focus:ring-blue-500"></select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase">Ngày dạy</label>
-                        <input type="text" id="cfg-date" onchange="saveSession()" class="w-full mt-1 p-2 bg-slate-50 border rounded-lg outline-none">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-500 uppercase">Buổi</label>
-                        <select id="cfg-session" onchange="saveSession()" class="w-full mt-1 p-2 bg-slate-50 border rounded-lg outline-none">
-                            <option value="Sáng">Sáng</option>
-                            <option value="Chiều">Chiều</option>
-                        </select>
-                    </div>
+        <section id="tab-classes" class="tab-content active">
+            <h2 class="text-2xl font-black text-slate-800 uppercase mb-6">🏫 Danh sách lớp huấn luyện</h2>
+            <div id="class-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 </div>
-            </div>
+        </section>
 
+        <section id="tab-attendance" class="tab-content">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-black text-slate-800 uppercase">📊 Dữ liệu điểm danh lớp</h2>
+                <div id="active-class-tag" class="px-4 py-2 bg-blue-600 text-white rounded-full text-xs font-bold shadow-lg">Đang tải...</div>
+            </div>
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div id="stats" class="p-4 bg-blue-50 text-blue-700 font-bold text-sm border-b border-blue-100 italic">Đang tải dữ liệu...</div>
-                <table class="text-sm">
-                    <thead>
-                        <tr class="text-left">
-                            <th class="p-4 border-b w-16">STT</th>
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                        <tr>
                             <th class="p-4 border-b">Học viên</th>
                             <th class="p-4 border-b">Đơn vị</th>
                             <th class="p-4 border-b">Trạng thái</th>
-                            <th class="p-4 border-b text-center">Ảnh</th>
                             <th class="p-4 border-b">Giờ quét</th>
-                            <th class="p-4 border-b text-right no-print">Thao tác</th>
+                            <th class="p-4 border-b text-right">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody id="body-report" class="divide-y divide-slate-100"></tbody>
-                </table>
-            </div>
-        </section>
-
-        <section id="tab-audit" class="tab-content">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight">🔍 Hậu kiểm ảnh chụp</h2>
-                <button class="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100" onclick="renderAudit()">LÀM MỚI</button>
-            </div>
-            <div id="audit-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                </div>
-        </section>
-
-        <section id="tab-export" class="tab-content">
-            <div class="flex gap-4 mb-8 no-print">
-                <button class="bg-green-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg" onclick="generateFullReport()">TẠO BÁO CÁO DẤU X</button>
-                <button class="bg-slate-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg" onclick="window.print()">IN / XUẤT PDF</button>
-            </div>
-            <div id="report-container" class="bg-white p-10 rounded-2xl shadow-sm border">
-                <h2 class="text-center text-xl font-bold uppercase mb-6">Bảng Tổng Hợp Điểm Danh Học Viên</h2>
-                <table id="full-report-table" class="text-xs">
-                    <thead id="report-thead"></thead>
-                    <tbody id="report-tbody"></tbody>
+                    <tbody id="attendance-body" class="divide-y divide-slate-100"></tbody>
                 </table>
             </div>
         </section>
 
         <section id="tab-upload" class="tab-content">
-            <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tight mb-6">📥 Nạp Master List (10 Cột)</h2>
-            <div class="bg-white p-6 rounded-2xl border-2 border-dashed border-slate-300">
-                <textarea id="csvData" class="w-full h-80 p-4 font-mono text-xs outline-none focus:border-blue-500 transition-all" placeholder="Dán dữ liệu Excel 10 cột tại đây..."></textarea>
-                <button onclick="uploadData()" class="mt-4 w-full bg-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-blue-700">TẢI LÊN HỆ THỐNG</button>
+            <h2 class="text-2xl font-black text-slate-800 uppercase mb-6 tracking-tight">📥 Nạp danh sách lớp mới</h2>
+            <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 space-y-6">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Tên Lớp (VD: An toàn điện nhóm 3)</label>
+                        <input type="text" id="new-class-name" class="w-full p-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Địa điểm / Khách hàng</label>
+                        <input type="text" id="new-location" class="w-full p-3 bg-slate-50 border rounded-xl outline-none" placeholder="VD: HEPC">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Dữ liệu Excel (10 Cột)</label>
+                    <textarea id="csvData" rows="10" class="w-full p-4 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl font-mono text-xs" placeholder="Dán dữ liệu tại đây..."></textarea>
+                </div>
+                <button onclick="uploadData()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-lg hover:bg-blue-700 shadow-xl shadow-blue-100">LƯU TRỮ LỚP HỌC</button>
             </div>
         </section>
 
     </main>
 
 <script>
-    // GIỮ NGUYÊN CẤU HÌNH CỦA ANH
+    // FIREBASE CONFIG (Giữ nguyên của anh)
     const firebaseConfig = {
         apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
         authDomain: "hepc-ed95d.firebaseapp.com",
@@ -164,11 +106,9 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // HÀM CHUYỂN TAB MỚI (FIX LỖI CHIA ĐÔI)
     function switchTab(id, btn) {
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        
         document.querySelectorAll('.nav-btn').forEach(l => {
             l.classList.remove('active', 'bg-blue-600', 'text-white', 'shadow-lg');
             l.classList.add('text-slate-400');
@@ -177,162 +117,141 @@
         btn.classList.remove('text-slate-400');
     }
 
-    // --- GIỮ NGUYÊN LOGIC FIREBASE CỦA ANH ---
-    async function saveSession() {
-        const loc = document.getElementById('cfg-location').value;
-        const cls = document.getElementById('cfg-class').value;
-        const dateRaw = document.getElementById('cfg-date').value;
-        if(!loc || !cls) return;
-        await db.ref('current_session').set({
-            location: loc, class: cls,
-            date: dateRaw.replace(/\//g, '-'),
-            session: document.getElementById('cfg-session').value
+    // --- NẠP LỚP MỚI ---
+    async function uploadData() {
+        const className = document.getElementById('new-class-name').value.trim();
+        const locationName = document.getElementById('new-location').value.trim();
+        const raw = document.getElementById('csvData').value.trim();
+        
+        if(!className || !locationName || !raw) return alert("Vui lòng nhập đầy đủ Tên lớp, Địa điểm và Dữ liệu!");
+
+        const lines = raw.split('\n');
+        let students = {};
+        lines.forEach(line => {
+            const c = line.split('\t');
+            if(c.length >= 1) {
+                students[c[0].trim()] = {
+                    stt: c[0], name: c[1] || "", gender: c[2] || "", dob: c[3] || "", 
+                    rank: c[4] || "", position: c[5] || "", department: c[6] || "", company: c[7] || ""
+                };
+            }
         });
-        renderReport();
-    }
 
-    async function loadClasses() {
-        const loc = document.getElementById('cfg-location').value;
-        const snap = await db.ref(`master_list/${loc}`).once('value');
-        const clsSelect = document.getElementById('cfg-class');
-        const data = snap.val() || {};
-        clsSelect.innerHTML = Object.keys(data).map(c => `<option value="${c}">${c}</option>`).join('');
-        saveSession();
-    }
-
-    async function renderReport() {
-        const snap = await db.ref().once('value');
-        const data = snap.val() || {};
-        const sess = data.current_session || {};
-        if(!sess.location) return;
-
-        const students = (data.master_list?.[sess.location]?.[sess.class]) || {};
-        const attendance = (data.attendance?.[sess.date]?.[sess.session]) || {};
-        const tbody = document.getElementById('body-report');
-        tbody.innerHTML = '';
-        let done = 0;
-
-        Object.values(students).sort((a,b)=>parseInt(a.stt)-parseInt(b.stt)).forEach(s => {
-            const att = attendance[s.stt];
-            if(att) done++;
-            tbody.innerHTML += `
-                <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="p-4 text-slate-400 font-mono">${s.stt}</td>
-                    <td class="p-4 font-bold text-slate-700">${s.name}</td>
-                    <td class="p-4 text-slate-500 text-xs">${s.department || ""}</td>
-                    <td class="p-4">${att ? '<span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded uppercase">Có mặt</span>' : '<span class="text-slate-300 text-[10px] uppercase">Vắng</span>'}</td>
-                    <td class="p-4 flex justify-center">${att ? `<img src="${att.photo}" class="w-10 h-12 object-cover rounded shadow-sm border border-white">` : '-'}</td>
-                    <td class="p-4 text-xs text-slate-400 font-mono">${att ? att.time.split(' ngày ')[0] : ''}</td>
-                    <td class="p-4 text-right no-print">
-                        <button onclick="deleteAtt('${sess.date}','${sess.session}','${s.stt}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>`;
+        await db.ref(`classes/${className}`).set({
+            name: className,
+            location: locationName,
+            createdAt: new Date().toLocaleDateString('vi-VN'),
+            students: students
         });
-        document.getElementById('stats').innerText = `Lớp: ${sess.class} | Hiện diện: ${done}/${Object.keys(students).length}`;
+
+        alert("Đã lưu lớp " + className + " thành công!");
+        document.getElementById('new-class-name').value = '';
+        document.getElementById('csvData').value = '';
+        renderClassList();
+        switchTab('tab-classes', document.querySelector('[onclick*="tab-classes"]'));
     }
 
-    async function renderAudit() {
-        const snap = await db.ref().once('value');
-        const data = snap.val() || {};
-        const sess = data.current_session || {};
-        const attendance = (data.attendance?.[sess.date]?.[sess.session]) || {};
-        const container = document.getElementById('audit-container');
+    // --- HIỂN THỊ DANH SÁCH LỚP ---
+    async function renderClassList() {
+        const snap = await db.ref('classes').once('value');
+        const classes = snap.val() || {};
+        const container = document.getElementById('class-list-container');
         container.innerHTML = '';
 
-        const entries = Object.entries(attendance);
-        if(entries.length === 0) {
-            container.innerHTML = "<p class='col-span-full text-center py-10 text-slate-400 italic'>Chưa có ảnh trong buổi này.</p>";
-            return;
-        }
-
-        entries.forEach(([stt, info]) => {
+        Object.keys(classes).forEach(id => {
+            const cls = classes[id];
+            const studentCount = Object.keys(cls.students || {}).length;
             container.innerHTML += `
-                <div class="audit-card bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
-                    <img src="${info.photo}" onclick="window.open(this.src, '_blank')" class="w-full cursor-pointer shadow-inner">
-                    <div class="mt-3">
-                        <div class="font-bold text-slate-800 uppercase text-xs truncate">${info.name}</div>
-                        <div class="flex justify-between items-center mt-2">
-                            <span class="text-blue-600 font-bold text-[10px]">⏱ ${info.time.split(' ngày ')[0]}</span>
-                            <span class="text-slate-400 text-[10px]">STT: ${stt}</span>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:shadow-xl transition-all">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl font-bold">
+                            <i class="fas fa-graduation-cap"></i>
                         </div>
+                        <button onclick="deleteClass('${id}')" class="text-slate-300 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
                     </div>
-                </div>`;
+                    <h3 class="font-black text-slate-800 uppercase text-lg leading-tight mb-1">${cls.name}</h3>
+                    <p class="text-xs text-slate-400 font-medium uppercase mb-4 tracking-wider"><i class="fas fa-map-marker-alt mr-1"></i> ${cls.location}</p>
+                    <div class="flex items-center gap-4 py-3 border-y border-slate-50 mb-4">
+                        <div class="text-center flex-1 border-r border-slate-50"><p class="text-[10px] text-slate-400 uppercase font-bold">Sĩ số</p><p class="font-black text-slate-700">${studentCount}</p></div>
+                        <div class="text-center flex-1"><p class="text-[10px] text-slate-400 uppercase font-bold">Ngày tạo</p><p class="font-bold text-slate-700 text-xs">${cls.createdAt}</p></div>
+                    </div>
+                    <button onclick="activateClass('${id}')" class="w-full py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-blue-600 transition-all text-xs tracking-widest">CHỌN ĐIỂM DANH</button>
+                </div>
+            `;
         });
     }
 
-    async function uploadData() {
-        const raw = document.getElementById('csvData').value.trim();
-        if(!raw) return alert("Vui lòng dán dữ liệu!");
-        const lines = raw.split('\n');
-        let count = 0;
-        for(let line of lines) {
-            const c = line.split('\t');
-            if(c.length >= 10) {
-                const stt = c[0].trim();
-                const loc = c[8].trim(); 
-                const cls = c[9].trim();
-                await db.ref(`master_list/${loc}/${cls}/${stt}`).set({
-                    stt, name: c[1], gender: c[2], dob: c[3], rank: c[4], 
-                    position: c[5], department: c[6], company: c[7], location: loc, class: cls
-                });
-                count++;
-            }
-        }
-        alert("Thành công: " + count);
-        location.reload();
+    // --- KÍCH HOẠT LỚP ĐIỂM DANH ---
+    async function activateClass(id) {
+        const snap = await db.ref(`classes/${id}`).once('value');
+        const cls = snap.val();
+        const now = new Date();
+        const dateStr = `${now.getDate().toString().padStart(2,'0')}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getFullYear()}`;
+        
+        await db.ref('current_session').set({
+            class: cls.name,
+            location: cls.location,
+            date: dateStr,
+            session: now.getHours() < 12 ? "Sáng" : "Chiều",
+            source: id // Lưu ID lớp để truy xuất student list
+        });
+
+        alert("Đã kích hoạt lớp: " + cls.name + ". Học viên có thể quét mã ngay bây giờ!");
+        renderAttendance();
+        switchTab('tab-attendance', document.querySelector('[onclick*="tab-attendance"]'));
     }
 
-    async function generateFullReport() {
+    // --- HIỂN THỊ ĐIỂM DANH THỰC TẾ ---
+    async function renderAttendance() {
         const snap = await db.ref().once('value');
         const data = snap.val() || {};
         const sess = data.current_session || {};
-        const master = (data.master_list?.[sess.location]?.[sess.class]) || {};
-        const attendance = data.attendance || {};
+        if(!sess.class) return;
 
-        const dates = Object.keys(attendance).sort();
-        let header1 = `<tr><th rowspan="2" class="p-2 border">STT</th><th rowspan="2" class="p-2 border">Họ và tên</th><th rowspan="2" class="p-2 border">Đơn vị</th>`;
-        let header2 = `<tr>`;
-        dates.forEach(d => {
-            header1 += `<th colspan="2" class="p-2 border">Ngày ${d.replace(/-/g,'/')}</th>`;
-            header2 += `<th class="p-1 border">S</th><th class="p-1 border">C</th>`;
-        });
-        document.getElementById('report-thead').innerHTML = header1 + `</tr>` + header2 + `</tr>`;
+        document.getElementById('active-class-tag').innerText = `ĐANG MỞ: ${sess.class}`;
 
-        let bodyHtml = '';
-        Object.values(master).sort((a,b)=>parseInt(a.stt)-parseInt(b.stt)).forEach(s => {
-            bodyHtml += `<tr class="text-center">
-                <td class="p-1 border">${s.stt}</td>
-                <td class="p-1 border text-left font-bold">${s.name}</td>
-                <td class="p-1 border text-left">${s.department || ""}</td>`;
-            dates.forEach(d => {
-                const sAtt = (attendance[d]?.['Sáng']?.[s.stt]) ? "X" : "";
-                const cAtt = (attendance[d]?.['Chiều']?.[s.stt]) ? "X" : "";
-                bodyHtml += `<td class="p-1 border font-bold text-blue-600">${sAtt}</td><td class="p-1 border font-bold text-blue-600">${cAtt}</td>`;
-            });
-            bodyHtml += `</tr>`;
+        const clsData = data.classes[sess.source] || {};
+        const students = clsData.students || {};
+        const att = (data.attendance?.[sess.date]?.[sess.session]) || {};
+        
+        const tbody = document.getElementById('attendance-body');
+        tbody.innerHTML = '';
+        
+        Object.values(students).sort((a,b)=>parseInt(a.stt)-parseInt(b.stt)).forEach(s => {
+            const present = att[s.stt];
+            tbody.innerHTML += `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-4 font-bold text-slate-700">${s.name}</td>
+                    <td class="p-4 text-xs text-slate-500">${s.department || s.company || ""}</td>
+                    <td class="p-4">${present ? '<span class="text-green-600 font-black text-[10px] uppercase">Có mặt</span>' : '<span class="text-slate-300 text-[10px] uppercase">Vắng</span>'}</td>
+                    <td class="p-4 text-xs font-mono text-slate-400">${present ? present.time.split(' ngày ')[0] : '--:--'}</td>
+                    <td class="p-4 text-right">
+                        ${present ? `<button onclick="deleteAtt('${sess.date}','${sess.session}','${s.stt}')" class="text-red-400 hover:text-red-600"><i class="fas fa-undo"></i></button>` : ''}
+                    </td>
+                </tr>
+            `;
         });
-        document.getElementById('report-tbody').innerHTML = bodyHtml;
     }
 
-    async function deleteAtt(d, s, stt) {
-        if(confirm("Xóa điểm danh học viên này?")) {
-            await db.ref(`attendance/${d}/${s}/${stt}`).remove();
-            renderReport();
+    async function deleteClass(id) {
+        if(confirm("BẠN CÓ CHẮC MUỐN XÓA HẲN LỚP NÀY? Thao tác này sẽ xóa toàn bộ danh sách học viên của lớp.")) {
+            await db.ref(`classes/${id}`).remove();
+            renderClassList();
         }
     }
 
-    async function init() {
-        const now = new Date();
-        document.getElementById('cfg-date').value = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
-        db.ref('master_list').once('value', snap => {
-            const data = snap.val() || {};
-            const locSelect = document.getElementById('cfg-location');
-            locSelect.innerHTML = Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join('');
-            if(Object.keys(data).length > 0) loadClasses();
-        });
-        db.ref('attendance').on('value', () => renderReport());
+    async function deleteAtt(date, sess, stt) {
+        if(confirm("Hủy kết quả điểm danh của học viên này?")) {
+            await db.ref(`attendance/${date}/${sess}/${stt}`).remove();
+            renderAttendance();
+        }
     }
-    init();
+
+    // Khởi tạo
+    window.onload = () => {
+        renderClassList();
+        db.ref('attendance').on('value', () => renderAttendance());
+    };
 </script>
 </body>
 </html>
