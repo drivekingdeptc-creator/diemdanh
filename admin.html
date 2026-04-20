@@ -1,279 +1,152 @@
 <!DOCTYPE html>
-<html lang="vi"><!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - VDC Safety Manager</title>
+    <title>VDC SAFETY - ADMIN 4.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .menu-active { @apply bg-blue-600 shadow-lg; }
         section { display: none; }
-        section.active { display: block; }
+        section.active { display: block; animation: fadeIn 0.2s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .nav-link.active { @apply bg-blue-600 text-white shadow-lg shadow-blue-900/50; }
     </style>
 </head>
-<body class="bg-slate-50 flex">
+<body class="bg-slate-100 flex min-h-screen font-sans">
 
-    <aside class="w-64 bg-slate-900 min-h-screen text-white p-6 sticky top-0 h-screen">
-        <div class="mb-10 flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center font-bold">VDC</div>
-            <span class="text-xl font-bold tracking-wider uppercase">Safety 4.0</span>
+    <aside class="w-64 bg-slate-900 text-white flex flex-col sticky top-0 h-screen shadow-xl">
+        <div class="p-6 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center font-black text-xl text-white">V</div>
+                <span class="font-bold text-xl tracking-tight text-white uppercase">VDC Safety</span>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1 tracking-widest uppercase">Hệ thống quản trị 4.0</p>
         </div>
         
-        <nav class="space-y-2" id="main-nav">
-            <a href="javascript:void(0)" onclick="showSection('sec-dashboard')" class="nav-item block p-3 rounded-lg bg-blue-600"><i class="fas fa-chart-line mr-2 w-6"></i>Điểm danh lớp</a>
-            <a href="javascript:void(0)" onclick="showSection('sec-setup')" class="nav-item block p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-cog mr-2 w-6"></i>Thiết lập lớp</a>
-            <a href="javascript:void(0)" onclick="showSection('sec-add-user')" class="nav-item block p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-user-plus mr-2 w-6"></i>Thêm học viên</a>
-            <a href="javascript:void(0)" onclick="showSection('sec-audit')" class="nav-item block p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-search mr-2 w-6"></i>Soát vé nhanh</a>
-            <a href="javascript:void(0)" onclick="showSection('sec-report')" class="nav-item block p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-file-export mr-2 w-6"></i>Báo cáo tổng</a>
+        <nav class="flex-1 p-4 space-y-2">
+            <button onclick="nav('sec-dashboard', this)" class="nav-link active w-full flex items-center p-3 rounded-xl transition-all">
+                <i class="fas fa-th-large mr-3 w-5"></i> <span>Điểm danh lớp</span>
+            </button>
+            <button onclick="nav('sec-setup', this)" class="nav-link w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
+                <i class="fas fa-calendar-alt mr-3 w-5"></i> <span>Thiết lập lớp</span>
+            </button>
+            <button onclick="nav('sec-add-user', this)" class="nav-link w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
+                <i class="fas fa-user-plus mr-3 w-5"></i> <span>Thêm học viên</span>
+            </button>
+            <button onclick="nav('sec-audit', this)" class="nav-link w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
+                <i class="fas fa-search mr-3 w-5"></i> <span>Soát vé nhanh</span>
+            </button>
+            <button onclick="nav('sec-report', this)" class="nav-link w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
+                <i class="fas fa-file-pdf mr-3 w-5"></i> <span>Báo cáo tổng</span>
+            </button>
         </nav>
+
+        <div class="p-4 border-t border-slate-800">
+            <div class="flex items-center gap-3 p-3 bg-slate-800/40 rounded-xl">
+                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold">AT</div>
+                <div>
+                    <p class="text-xs font-bold text-white">Mr. An Toàn</p>
+                    <p class="text-[9px] text-blue-400">Chuyên gia OSH</p>
+                </div>
+            </div>
+        </div>
     </aside>
 
     <main class="flex-1 p-8">
+        
         <section id="sec-dashboard" class="active">
-            <header class="flex justify-between items-center mb-8">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-800">📊 Quản lý điểm danh</h2>
-                    <p id="current-class-info" class="text-slate-500 italic">Phiên làm việc: Chưa thiết lập</p>
-                </div>
-            </header>
-
+            <h1 class="text-2xl font-black text-slate-800 uppercase mb-6">📊 Quản lý điểm danh</h1>
             <div class="grid grid-cols-3 gap-6 mb-8">
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500">
-                    <div class="text-gray-500 text-sm uppercase font-bold">Sĩ số</div>
-                    <div id="stat-total" class="text-3xl font-black text-slate-800">0</div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border-b-4 border-blue-500">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Sĩ Số</p>
+                    <h3 class="text-3xl font-black text-slate-800">45</h3>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500">
-                    <div class="text-gray-500 text-sm uppercase font-bold">Hiện diện</div>
-                    <div id="stat-present" class="text-3xl font-black text-green-600">0</div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border-b-4 border-green-500">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Hiện Diện</p>
+                    <h3 class="text-3xl font-black text-green-600">38</h3>
                 </div>
-                <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500">
-                    <div class="text-gray-500 text-sm uppercase font-bold">Vắng</div>
-                    <div id="stat-absent" class="text-3xl font-black text-red-600">0</div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border-b-4 border-red-500">
+                    <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Vắng</p>
+                    <h3 class="text-3xl font-black text-red-600">07</h3>
                 </div>
             </div>
-
-            <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <table class="w-full text-left">
-                    <thead class="bg-slate-50 border-b">
+                    <thead class="bg-slate-50 text-[11px] uppercase text-slate-500 font-bold tracking-wider">
                         <tr>
-                            <th class="p-4 font-bold text-slate-600">Họ và Tên</th>
-                            <th class="p-4 font-bold text-slate-600">Đơn vị</th>
-                            <th class="p-4 font-bold text-slate-600">Thời gian</th>
-                            <th class="p-4 font-bold text-slate-600 text-center">Thao tác</th>
+                            <th class="p-4 border-b">Học viên</th>
+                            <th class="p-4 border-b">Thời gian</th>
+                            <th class="p-4 border-b text-center">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody id="attendance-list" class="divide-y text-sm">
-                        </tbody>
+                    <tbody class="divide-y text-sm">
+                        <tr class="hover:bg-slate-50">
+                            <td class="p-4 font-bold text-slate-700">Nguyễn Văn A</td>
+                            <td class="p-4 text-slate-500">07:45:12</td>
+                            <td class="p-4 text-center text-red-500 cursor-pointer hover:font-bold">Hủy</td>
+                        </tr>
+                    </tbody>
                 </table>
             </div>
         </section>
 
         <section id="sec-setup">
-            <h2 class="text-2xl font-bold mb-6">⚙️ Thiết lập phiên dạy</h2>
-            <div class="bg-white p-6 rounded-xl shadow-sm max-w-lg">
+            <h1 class="text-2xl font-black text-slate-800 uppercase mb-6">⚙️ Thiết lập phiên dạy</h1>
+            <div class="max-w-md bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-bold mb-1">Ngày huấn luyện</label>
-                        <input type="date" id="setup-date" class="w-full p-2 border rounded">
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Ngày huấn luyện</label>
+                        <input type="date" class="w-full p-3 bg-slate-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-sm font-bold mb-1">Buổi</label>
-                        <select id="setup-session" class="w-full p-2 border rounded">
-                            <option value="Sáng">Sáng</option>
-                            <option value="Chiều">Chiều</option>
+                        <label class="block text-xs font-bold text-slate-500 uppercase mb-2">Buổi dạy</label>
+                        <select class="w-full p-3 bg-slate-50 border rounded-xl outline-none">
+                            <option>Sáng</option>
+                            <option>Chiều</option>
                         </select>
                     </div>
-                    <button onclick="saveSetup()" class="w-full bg-blue-600 text-white p-3 rounded-lg font-bold">LƯU THIẾT LẬP</button>
+                    <button class="w-full bg-blue-600 text-white py-4 rounded-xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all">LƯU THIẾT LẬP</button>
                 </div>
             </div>
         </section>
 
         <section id="sec-add-user">
-            <h2 class="text-2xl font-bold mb-6">➕ Nhập danh sách học viên</h2>
-            <div class="bg-white p-6 rounded-xl shadow-sm space-y-6">
-                <div>
-                    <label class="block text-sm font-bold mb-2">Dán dữ liệu từ Excel (Họ tên | Đơn vị | ...)</label>
-                    <textarea id="excel-input" rows="8" class="w-full p-4 bg-slate-50 border border-dashed rounded-lg" placeholder="Nguyễn Văn A	Công ty VDC..."></textarea>
-                </div>
-                <button onclick="importExcel()" class="bg-green-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-green-700">XÁC NHẬN NẠP DANH SÁCH</button>
+            <h1 class="text-2xl font-black text-slate-800 uppercase mb-6">➕ Nhập danh sách Excel</h1>
+            <div class="bg-white p-6 rounded-3xl border-2 border-dashed border-slate-200">
+                <textarea rows="10" class="w-full p-4 outline-none text-sm font-mono" placeholder="Dán dữ liệu Excel tại đây..."></textarea>
+                <button class="mt-4 bg-green-600 text-white px-8 py-3 rounded-xl font-bold">XÁC NHẬN NẠP</button>
             </div>
         </section>
 
         <section id="sec-report">
-            <h2 class="text-2xl font-bold mb-6">📜 Xuất báo cáo tổng hợp</h2>
-            <div class="bg-white p-8 rounded-xl shadow-sm text-center">
+            <h1 class="text-2xl font-black text-slate-800 uppercase mb-6">📜 Xuất báo cáo PDF</h1>
+            <div class="bg-white p-20 rounded-3xl text-center border">
                 <i class="fas fa-file-pdf text-6xl text-red-500 mb-4"></i>
-                <p class="mb-6 text-gray-600">Hệ thống sẽ tổng hợp dữ liệu điểm danh và tạo file PDF theo mẫu VDC Safety.</p>
-                <button onclick="generateReport()" class="bg-red-600 text-white px-10 py-4 rounded-xl font-bold text-lg">TẠO & TẢI BÁO CÁO (PDF)</button>
+                <h3 class="font-bold text-xl mb-4">Sẵn sàng trích xuất dữ liệu</h3>
+                <button class="bg-red-600 text-white px-10 py-4 rounded-2xl font-bold shadow-xl shadow-red-500/20">TẢI FILE PDF BÁO CÁO</button>
             </div>
         </section>
 
-        </main>
-
-    <script>
-        // 1. Chức năng chuyển đổi Menu
-        function showSection(sectionId) {
-            // Ẩn tất cả các section
-            document.querySelectorAll('section').forEach(sec => sec.classList.remove('active'));
-            // Hiện section được chọn
-            document.getElementById(sectionId).classList.add('active');
-            
-            // Cập nhật trạng thái menu bên trái
-            document.querySelectorAll('.nav-item').forEach(nav => {
-                nav.classList.remove('bg-blue-600', 'shadow-lg');
-                nav.classList.add('hover:bg-slate-800');
-            });
-            event.currentTarget.classList.add('bg-blue-600', 'shadow-lg');
-            event.currentTarget.classList.remove('hover:bg-slate-800');
-        }
-
-        // 2. Lưu thiết lập lớp học
-        function saveSetup() {
-            const date = document.getElementById('setup-date').value;
-            const session = document.getElementById('setup-session').value;
-            if(!date) return alert("Vui lòng chọn ngày!");
-            
-            document.getElementById('current-class-info').innerText = `Phiên làm việc: Ngày ${date} - Buổi ${session}`;
-            alert("Đã thiết lập phiên dạy thành công!");
-            showSection('sec-dashboard');
-        }
-
-        // 3. Xử lý nạp dữ liệu Excel (Giả lập)
-        function importExcel() {
-            const data = document.getElementById('excel-input').value;
-            if(!data) return alert("Vui lòng dán dữ liệu!");
-            
-            const lines = data.split('\n');
-            // Logic xử lý tách cột và lưu vào localStorage hoặc DB tại đây
-            alert(`Đã nhận diện ${lines.length} học viên!`);
-            document.getElementById('stat-total').innerText = lines.length;
-            document.getElementById('stat-absent').innerText = lines.length;
-            showSection('sec-dashboard');
-            renderTable();
-        }
-
-        // 4. Render bảng danh sách (Demo data)
-        function renderTable() {
-            const tbody = document.getElementById('attendance-list');
-            tbody.innerHTML = `
-                <tr>
-                    <td class="p-4 font-medium">Nguyễn Văn Kế</td>
-                    <td class="p-4">VDC Trainer</td>
-                    <td class="p-4 text-green-600 font-bold">08:00:25</td>
-                    <td class="p-4 text-center text-red-500">
-                        <button onclick="deleteAttendance()" class="hover:underline"><i class="fas fa-trash"></i> Xóa</button>
-                    </td>
-                </tr>
-            `;
-        }
-
-        function generateReport() {
-            alert("Hệ thống đang trích xuất dữ liệu. Vui lòng chờ...");
-        }
-
-        // Khởi tạo bảng khi load
-        window.onload = renderTable;
-    </script>
-</body>
-</html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - VDC Safety Manager</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-</head>
-<body class="bg-slate-50 flex">
-
-    <aside class="w-64 bg-slate-900 min-h-screen text-white p-6 sticky top-0 h-screen">
-        <div class="mb-10 flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center font-bold">VDC</div>
-            <span class="text-xl font-bold tracking-wider">SAFETY</span>
-        </div>
-        
-        <nav class="space-y-4">
-            <a href="#" class="block p-3 bg-blue-600 rounded-lg"><i class="fas fa-chart-line mr-2"></i> Điểm danh lớp</a>
-            <a href="#" class="block p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-cog mr-2"></i> Thiết lập lớp học</a>
-            <a href="#" class="block p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-user-plus mr-2"></i> Thêm học viên</a>
-            <a href="#" class="block p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-search mr-2"></i> Soát vé nhanh</a>
-            <a href="#" class="block p-3 hover:bg-slate-800 rounded-lg"><i class="fas fa-file-export mr-2"></i> Báo cáo tổng</a>
-        </nav>
-    </aside>
-
-    <main class="flex-1 p-8">
-        <header class="flex justify-between items-center mb-8">
-            <div>
-                <h2 class="text-2xl font-bold text-slate-800">📊 Quản lý điểm danh</h2>
-                <p class="text-slate-500">Lớp: An toàn điện - 21/04/2026</p>
-            </div>
-            <div class="flex items-center gap-4 text-sm font-medium">
-                <span class="text-gray-600">Xin chào, <b>Mr. An Toàn</b></span>
-                <div class="w-10 h-10 rounded-full bg-gray-300 border-2 border-white shadow-sm"></div>
-            </div>
-        </header>
-
-        <div class="grid grid-cols-3 gap-6 mb-8">
-            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-blue-500 cursor-pointer hover:shadow-md transition">
-                <div class="text-gray-500 text-sm uppercase font-bold">Sĩ số</div>
-                <div class="text-3xl font-black text-slate-800">45</div>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-green-500 cursor-pointer hover:shadow-md transition">
-                <div class="text-gray-500 text-sm uppercase font-bold">Hiện diện</div>
-                <div class="text-3xl font-black text-green-600">38</div>
-            </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border-l-4 border-red-500 cursor-pointer hover:shadow-md transition">
-                <div class="text-gray-500 text-sm uppercase font-bold">Vắng</div>
-                <div class="text-3xl font-black text-red-600">07</div>
-            </div>
-        </div>
-
-        <section class="bg-white p-6 rounded-xl shadow-sm mb-8">
-            <h3 class="font-bold text-lg mb-4 text-slate-700">➕ Nạp danh sách từ Excel</h3>
-            <textarea id="excel-data" rows="4" placeholder="Dán 10 cột dữ liệu từ Excel tại đây..." class="w-full p-4 bg-slate-50 border border-dashed border-slate-300 rounded-lg text-sm"></textarea>
-            <button class="mt-3 px-6 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 font-bold transition">XÁC NHẬN</button>
-        </section>
-
-        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 border-b">
-                    <tr>
-                        <th class="p-4 font-bold text-slate-600">STT</th>
-                        <th class="p-4 font-bold text-slate-600">Họ và Tên</th>
-                        <th class="p-4 font-bold text-slate-600">Thời gian</th>
-                        <th class="p-4 font-bold text-slate-600">Ảnh chụp</th>
-                        <th class="p-4 font-bold text-slate-600 text-center">Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y">
-                    <tr>
-                        <td class="p-4">01</td>
-                        <td class="p-4 font-medium text-slate-800">Nguyễn Văn A</td>
-                        <td class="p-4 text-slate-500">07:45:12</td>
-                        <td class="p-4">
-                            <div class="w-10 h-10 bg-gray-200 rounded-lg overflow-hidden border border-gray-300">
-                                <img src="https://via.placeholder.com/40" alt="Face">
-                            </div>
-                        </td>
-                        <td class="p-4 text-center">
-                            <button title="Xóa ID" class="text-orange-500 hover:text-orange-700 mx-2"><i class="fas fa-fingerprint"></i></button>
-                            <button title="Hủy điểm danh" class="text-red-500 hover:text-red-700 mx-2"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
     </main>
 
-    <div id="modal-report" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center">
-        <div class="bg-white p-8 rounded-2xl max-w-md w-full">
-            <h3 class="text-xl font-bold mb-4">📜 Cấu hình báo cáo tổng</h3>
-            <p class="text-gray-600 mb-6 text-sm">Hệ thống sẽ tự động điền dấu "X" và xuất định dạng PDF theo chuẩn VDC Safety.</p>
-            <button class="w-full py-3 bg-green-600 text-white rounded-xl font-bold shadow-lg">TẠO BÁO CÁO & TẢI XUỐNG</button>
-            <button onclick="this.closest('#modal-report').classList.add('hidden')" class="w-full mt-2 text-gray-400 py-2">Đóng</button>
-        </div>
-    </div>
-
+    <script>
+        function nav(id, btn) {
+            // Ẩn tất cả section
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+            // Hiện section được chọn
+            document.getElementById(id).classList.add('active');
+            
+            // Xóa active ở tất cả các nút menu
+            document.querySelectorAll('.nav-link').forEach(l => {
+                l.classList.remove('active', 'bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-900/50');
+                l.classList.add('text-slate-400');
+            });
+            
+            // Thêm active cho nút vừa bấm
+            btn.classList.add('active', 'bg-blue-600', 'text-white', 'shadow-lg', 'shadow-blue-900/50');
+            btn.classList.remove('text-slate-400');
+        }
+    </script>
 </body>
 </html>
