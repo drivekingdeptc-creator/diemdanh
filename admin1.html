@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>VDC Admin v1.7.0 - Quản lý Chuyên sâu</title>
+    <title>VDC Admin v1.7.5 - Chi tiết OSH & Audit</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -10,90 +10,88 @@
     <style>
         :root { --primary: #1e293b; --accent: #3b82f6; }
         body { background: #f1f5f9; font-family: 'Inter', sans-serif; overflow: hidden; }
-        .tab-content { display: none; height: calc(100vh - 40px); overflow-y: auto; padding-bottom: 50px; }
+        .tab-content { display: none; height: calc(100vh - 40px); overflow-y: auto; padding-bottom: 80px; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .nav-btn.active { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
         
-        /* Sidebar Toggle */
+        /* Sidebar */
         #sidebar { transition: all 0.3s ease; width: 260px; }
         #sidebar.collapsed { width: 80px; }
         #sidebar.collapsed .nav-text, #sidebar.collapsed .logo-text { display: none; }
         #sidebar.collapsed .nav-btn { justify-content: center; padding: 12px; }
-        #sidebar.collapsed .nav-btn i { margin-right: 0; font-size: 1.2rem; }
 
-        .stat-card { transition: all 0.3s ease; cursor: pointer; border: 2px solid transparent; }
-        .stat-card:hover { transform: translateY(-5px); }
-        .stat-card.active-filter { border-color: var(--accent); background: white !important; }
+        /* Bảng & Popup */
+        th { background: #f8fafc; color: #64748b; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; animation: fadeIn 0.2s ease; }
+        .popup-content { max-width: 90%; max-height: 90%; border-radius: 20px; border: 5px solid white; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body class="flex min-h-screen">
 
-    <aside id="sidebar" class="bg-[#1e293b] text-white flex flex-col sticky top-0 h-screen shadow-2xl z-50">
+    <div id="imagePopup" class="popup-overlay" onclick="closePopup()">
+        <img id="popupImg" class="popup-content" src="">
+        <div class="absolute top-5 right-5 text-white text-4xl cursor-pointer"><i class="fas fa-times"></i></div>
+    </div>
+
+    <aside id="sidebar" class="bg-[#1e293b] text-white flex flex-col sticky top-0 h-screen shadow-2xl z-50 no-print">
         <div class="p-6 border-b border-slate-700 flex items-center justify-between">
             <div class="flex items-center gap-3 overflow-hidden">
                 <div class="w-10 h-10 bg-blue-600 rounded-xl flex-shrink-0 flex items-center justify-center font-black text-xl">V</div>
-                <span class="logo-text font-bold text-lg uppercase whitespace-nowrap">VDC Safety</span>
+                <span class="logo-text font-bold text-lg uppercase tracking-tighter">VDC Safety</span>
             </div>
             <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white"><i class="fas fa-bars"></i></button>
         </div>
-        
         <nav class="flex-1 p-4 space-y-2 mt-4">
             <button onclick="switchTab('tab-classes', this)" class="nav-btn active w-full flex items-center p-3 rounded-xl transition-all hover:bg-slate-800">
-                <i class="fas fa-university w-6"></i> <span class="nav-text ml-2">Lớp học</span>
+                <i class="fas fa-university w-6 text-center"></i> <span class="nav-text ml-2">Lớp học</span>
             </button>
             <button onclick="switchTab('tab-attendance', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-check-double w-6"></i> <span class="nav-text ml-2">Điểm danh</span>
+                <i class="fas fa-check-double w-6 text-center"></i> <span class="nav-text ml-2">Điểm danh</span>
             </button>
             <button onclick="switchTab('tab-faces', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-user-shield w-6"></i> <span class="nav-text ml-2">Quản lý khuôn mặt</span>
+                <i class="fas fa-user-shield w-6 text-center"></i> <span class="nav-text ml-2">Quản lý Face ID</span>
             </button>
             <button onclick="switchTab('tab-upload', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-file-import w-6"></i> <span class="nav-text ml-2">Nạp danh sách</span>
+                <i class="fas fa-file-import w-6 text-center"></i> <span class="nav-text ml-2">Nạp danh sách</span>
             </button>
         </nav>
     </aside>
 
-    <main class="flex-1 p-8 overflow-hidden">
+    <main class="flex-1 p-6 overflow-hidden">
 
         <section id="tab-classes" class="tab-content active">
             <h2 class="text-2xl font-black text-slate-800 uppercase mb-6">🏫 Danh sách lớp huấn luyện</h2>
-            <div id="class-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="class-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
         </section>
 
         <section id="tab-attendance" class="tab-content">
-            <div class="flex justify-between items-end mb-6">
+            <div class="flex justify-between items-center mb-6">
                 <div>
                     <h2 class="text-2xl font-black text-slate-800 uppercase" id="att-title">Dữ liệu điểm danh</h2>
-                    <p id="active-class-tag" class="text-blue-600 font-bold text-sm uppercase"></p>
+                    <p id="active-class-tag" class="text-blue-600 font-bold text-xs uppercase tracking-widest mt-1"></p>
                 </div>
-                <button onclick="renderAttendance()" class="bg-white p-2 rounded-lg shadow-sm border text-slate-400 hover:text-blue-600"><i class="fas fa-sync-alt"></i></button>
-            </div>
-
-            <div class="grid grid-cols-3 gap-6 mb-8">
-                <div onclick="setFilter('all')" id="stat-all" class="stat-card bg-slate-800 text-white p-6 rounded-[2rem] shadow-xl">
-                    <p class="text-[10px] uppercase font-bold opacity-60">Sĩ số lớp</p>
-                    <h3 class="text-4xl font-black mt-1" id="count-all">0</h3>
-                </div>
-                <div onclick="setFilter('present')" id="stat-present" class="stat-card bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 text-green-600">
-                    <p class="text-[10px] uppercase font-bold text-slate-400">Đã điểm danh</p>
-                    <h3 class="text-4xl font-black mt-1" id="count-present">0</h3>
-                </div>
-                <div onclick="setFilter('absent')" id="stat-absent" class="stat-card bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 text-red-400">
-                    <p class="text-[10px] uppercase font-bold text-slate-400">Vắng mặt</p>
-                    <h3 class="text-4xl font-black mt-1" id="count-absent">0</h3>
+                <div class="flex gap-2">
+                    <button onclick="setFilter('absent')" class="px-4 py-2 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Vắng: <span id="count-absent">0</span></button>
+                    <button onclick="setFilter('present')" class="px-4 py-2 bg-green-50 text-green-600 rounded-xl text-[10px] font-black uppercase hover:bg-green-600 hover:text-white transition-all">Có mặt: <span id="count-present">0</span></button>
+                    <button onclick="setFilter('all')" class="px-4 py-2 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase hover:bg-slate-800 hover:text-white transition-all underline">Tất cả: <span id="count-all">0</span></button>
                 </div>
             </div>
 
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+            <div class="bg-white rounded-[2rem] shadow-sm border border-slate-100 overflow-hidden">
+                <table class="w-full text-left text-[12px]">
+                    <thead class="border-b">
                         <tr>
-                            <th class="p-4">STT</th>
-                            <th class="p-4">Học viên</th>
-                            <th class="p-4">Đơn vị</th>
-                            <th class="p-4 text-center">Trạng thái</th>
-                            <th class="p-4">Thời gian</th>
+                            <th class="p-4 w-10 text-center">TT</th>
+                            <th class="p-4 w-12">Ảnh</th>
+                            <th class="p-4">Họ và tên</th>
+                            <th class="p-4 w-14">Phái</th>
+                            <th class="p-4 w-20">Năm sinh</th>
+                            <th class="p-4 w-14">Bậc AT</th>
+                            <th class="p-4">Chức danh</th>
+                            <th class="p-4">Đơn vị công tác</th>
+                            <th class="p-4 w-20">Giờ quét</th>
+                            <th class="p-4 w-10 text-center">Hủy</th>
                         </tr>
                     </thead>
                     <tbody id="attendance-body" class="divide-y divide-slate-50"></tbody>
@@ -102,27 +100,19 @@
         </section>
 
         <section id="tab-faces" class="tab-content">
-            <h2 class="text-2xl font-black text-slate-800 uppercase mb-6">🛡️ Quản lý dữ liệu khuôn mặt</h2>
-            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-6">
-                <div class="flex gap-4">
-                    <input type="text" id="face-search" oninput="renderFaceList()" placeholder="Tìm tên học viên để xóa Face ID..." class="flex-1 p-4 bg-slate-50 border rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold">
-                    <div class="bg-blue-50 text-blue-600 px-6 py-4 rounded-2xl flex items-center font-bold">
-                        <span id="count-faces">0</span> &nbsp;Khuôn mặt
-                    </div>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="face-list-container"></div>
+            <h2 class="text-2xl font-black text-slate-800 uppercase mb-6">🛡️ Quản lý khuôn mặt</h2>
+            <div id="face-list-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
         </section>
 
         <section id="tab-upload" class="tab-content">
-            <h2 class="text-2xl font-black text-slate-800 uppercase mb-6">📥 Nạp danh sách lớp</h2>
-            <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-200 space-y-6">
+            <h2 class="text-2xl font-black text-slate-800 uppercase mb-6">📥 Nạp lớp mới</h2>
+            <div class="bg-white p-8 rounded-[2rem] shadow-sm border space-y-4">
                 <div class="grid grid-cols-2 gap-4">
                     <input type="text" id="new-class-name" class="p-4 bg-slate-50 border rounded-2xl outline-none" placeholder="Tên lớp (VD: ATĐ Nhóm 3)">
                     <input type="text" id="new-location" class="p-4 bg-slate-50 border rounded-2xl outline-none" placeholder="Địa điểm (VD: HEPC)">
                 </div>
-                <textarea id="csvData" rows="10" class="w-full p-4 bg-slate-50 border-2 border-dashed rounded-2xl font-mono text-xs" placeholder="STT [Tab] Họ Tên [Tab] Giới Tính..."></textarea>
-                <button onclick="uploadData()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg shadow-xl">LƯU TRỮ LỚP HỌC</button>
+                <textarea id="csvData" rows="10" class="w-full p-4 bg-slate-50 border rounded-2xl font-mono text-[10px]" placeholder="Dán Excel 10 cột tại đây..."></textarea>
+                <button onclick="uploadData()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black">LƯU TRỮ LỚP HỌC</button>
             </div>
         </section>
     </main>
@@ -140,11 +130,9 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let currentFilter = 'all'; // all, present, absent
+    let currentFilter = 'all';
 
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('collapsed');
-    }
+    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
 
     function switchTab(id, btn) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -153,33 +141,86 @@
         btn.classList.add('active');
         if(id === 'tab-faces') renderFaceList();
         if(id === 'tab-attendance') renderAttendance();
+        if(id === 'tab-classes') renderClassList();
     }
 
-    function setFilter(type) {
-        currentFilter = type;
-        document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active-filter'));
-        document.getElementById('stat-' + type).classList.add('active-filter');
-        renderAttendance();
+    function openPopup(src) { document.getElementById('popupImg').src = src; document.getElementById('imagePopup').style.display = 'flex'; }
+    function closePopup() { document.getElementById('imagePopup').style.display = 'none'; }
+
+    // --- LOGIC ĐIỂM DANH CHI TIẾT ---
+    function setFilter(type) { currentFilter = type; renderAttendance(); }
+
+    async function renderAttendance() {
+        const snap = await db.ref().once('value');
+        const data = snap.val() || {};
+        const sess = data.current_session || {};
+        if(!sess.class) return;
+
+        document.getElementById('active-class-tag').innerText = `Lớp: ${sess.class} | Phiên: ${sess.date} (${sess.session})`;
+        
+        const studentsInClass = data.classes[sess.source]?.students || {};
+        const globalFaceDB = data.students || {}; // Dữ liệu AI đăng ký
+        const attRecords = data.attendance?.[sess.date]?.[sess.session] || {};
+        
+        let presentCount = 0;
+        let html = '';
+
+        Object.values(studentsInClass).sort((a,b)=>a.stt-b.stt).forEach(s => {
+            const hasAtt = attRecords[s.stt];
+            const profile = globalFaceDB[s.stt] || s; // Lấy hồ sơ từ Face DB nếu có, không thì lấy từ Master
+            
+            if(hasAtt) presentCount++;
+            if(currentFilter === 'present' && !hasAtt) return;
+            if(currentFilter === 'absent' && hasAtt) return;
+
+            html += `
+                <tr class="hover:bg-slate-50 transition-all ${!hasAtt ? 'opacity-50' : ''}">
+                    <td class="p-4 text-center text-slate-400 font-mono">${s.stt}</td>
+                    <td class="p-2">
+                        ${hasAtt ? `<img src="${hasAtt.photo}" onclick="openPopup(this.src)" class="w-10 h-12 object-cover rounded shadow-sm border border-white cursor-zoom-in hover:scale-110 transition-all">` : `<div class="w-10 h-12 bg-slate-100 rounded flex items-center justify-center text-slate-300"><i class="fas fa-user"></i></div>`}
+                    </td>
+                    <td class="p-4">
+                        <div class="font-black text-slate-700 uppercase">${s.name}</div>
+                        <div class="text-[9px] text-slate-400 font-bold">${hasAtt ? '✅ ĐÃ QUÉT MẶT' : '❌ CHƯA CÓ MẶT'}</div>
+                    </td>
+                    <td class="p-4">${profile.gender || '-'}</td>
+                    <td class="p-4">${profile.dob || '-'}</td>
+                    <td class="p-4"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded font-bold">${profile.rank || '-'}</span></td>
+                    <td class="p-4 text-slate-500">${profile.position || '-'}</td>
+                    <td class="p-4 font-medium text-slate-600 truncate max-w-[150px]">${profile.department || profile.company || '-'}</td>
+                    <td class="p-4 font-mono text-blue-500 font-bold">${hasAtt ? hasAtt.time.split(' ngày ')[0] : '--:--'}</td>
+                    <td class="p-4 text-center text-red-300 hover:text-red-600 cursor-pointer">
+                        ${hasAtt ? `<i class="fas fa-times-circle text-lg" onclick="deleteAtt('${sess.date}','${sess.session}','${s.stt}')"></i>` : ''}
+                    </td>
+                </tr>`;
+        });
+
+        document.getElementById('attendance-body').innerHTML = html;
+        document.getElementById('count-all').innerText = Object.keys(studentsInClass).length;
+        document.getElementById('count-present').innerText = presentCount;
+        document.getElementById('count-absent').innerText = Object.keys(studentsInClass).length - presentCount;
     }
 
-    // --- QUẢN LÝ LỚP ---
+    async function deleteAtt(date, sess, stt) {
+        if(confirm("Xóa kết quả điểm danh của học viên này?")) {
+            await db.ref(`attendance/${date}/${sess}/${stt}`).remove();
+            renderAttendance();
+        }
+    }
+
+    // --- CÁC HÀM CŨ (GIỮ NGUYÊN) ---
     async function uploadData() {
         const className = document.getElementById('new-class-name').value.trim();
-        const locationName = document.getElementById('new-location').value.trim();
+        const loc = document.getElementById('new-location').value.trim();
         const raw = document.getElementById('csvData').value.trim();
-        if(!className || !raw) return alert("Vui lòng điền thông tin!");
-
+        if(!className || !raw) return;
         const students = {};
         raw.split('\n').forEach(line => {
             const c = line.split('\t');
-            if(c.length >= 2) {
-                students[c[0].trim()] = { stt: c[0], name: c[1], gender: c[2]||"", company: c[7]||"" };
-            }
+            if(c.length >= 2) students[c[0].trim()] = { stt: c[0], name: c[1], gender: c[2]||"", dob: c[3]||"", rank: c[4]||"", position: c[5]||"", department: c[6]||"", company: c[7]||"" };
         });
-
-        await db.ref(`classes/${className}`).set({ name: className, location: locationName, students: students, createdAt: new Date().toLocaleDateString() });
-        alert("Thành công!");
-        location.reload();
+        await db.ref(`classes/${className}`).set({ name: className, location: loc, students: students, createdAt: new Date().toLocaleDateString() });
+        alert("Nạp thành công!"); location.reload();
     }
 
     async function renderClassList() {
@@ -188,105 +229,30 @@
         container.innerHTML = '';
         Object.keys(snap.val() || {}).forEach(id => {
             const cls = snap.val()[id];
-            container.innerHTML += `
-                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                    <h3 class="font-black text-slate-800 uppercase truncate">${cls.name}</h3>
-                    <p class="text-xs text-slate-400 mb-4">${cls.location}</p>
-                    <button onclick="activateClass('${id}')" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-xs">CHỌN LỚP NÀY</button>
-                    <button onclick="deleteClass('${id}')" class="w-full mt-2 text-slate-300 text-[10px] uppercase font-bold hover:text-red-500">Xóa lớp</button>
-                </div>`;
+            container.innerHTML += `<div class="bg-white p-4 rounded-3xl border shadow-sm"><h3 class="font-black text-slate-800 text-sm uppercase truncate">${cls.name}</h3><button onclick="activateClass('${id}')" class="w-full mt-3 py-2 bg-blue-600 text-white rounded-xl text-[10px] font-bold uppercase">Mở lớp</button><button onclick="deleteClass('${id}')" class="w-full mt-1 text-slate-300 text-[9px] uppercase hover:text-red-500">Xóa</button></div>`;
         });
     }
 
     async function activateClass(id) {
         const snap = await db.ref(`classes/${id}`).once('value');
-        const cls = snap.val();
-        const now = new Date();
+        const cls = snap.val(); const now = new Date();
         const dateStr = `${now.getDate().toString().padStart(2,'0')}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getFullYear()}`;
         await db.ref('current_session').set({ class: cls.name, location: cls.location, date: dateStr, session: now.getHours() < 12 ? "Sáng" : "Chiều", source: id });
-        renderAttendance();
         switchTab('tab-attendance', document.querySelector('[onclick*="tab-attendance"]'));
     }
 
-    // --- ĐIỂM DANH & LỌC ---
-    async function renderAttendance() {
-        const snap = await db.ref().once('value');
-        const data = snap.val() || {};
-        const sess = data.current_session || {};
-        if(!sess.class) return;
-
-        document.getElementById('active-class-tag').innerText = `Lớp hiện tại: ${sess.class}`;
-        const students = data.classes[sess.source]?.students || {};
-        const att = data.attendance?.[sess.date]?.[sess.session] || {};
-        
-        let presentCount = 0;
-        let listHTML = '';
-
-        Object.values(students).sort((a,b)=>a.stt-b.stt).forEach(s => {
-            const isPresent = att[s.stt];
-            if(isPresent) presentCount++;
-
-            // Logic lọc
-            if(currentFilter === 'present' && !isPresent) return;
-            if(currentFilter === 'absent' && isPresent) return;
-
-            listHTML += `
-                <tr class="hover:bg-slate-50 transition-colors">
-                    <td class="p-4 font-mono text-slate-400 text-xs">${s.stt}</td>
-                    <td class="p-4 font-bold text-slate-700 uppercase text-xs">${s.name}</td>
-                    <td class="p-4 text-xs text-slate-500">${s.company || ""}</td>
-                    <td class="p-4 text-center">
-                        ${isPresent ? '<span class="px-3 py-1 bg-green-100 text-green-600 rounded-full text-[10px] font-black uppercase">Có mặt</span>' : '<span class="px-3 py-1 bg-slate-100 text-slate-300 rounded-full text-[10px] font-black uppercase">Vắng</span>'}
-                    </td>
-                    <td class="p-4 font-mono text-xs text-slate-400">${isPresent ? isPresent.time.split(' ngày ')[0] : '--:--'}</td>
-                </tr>`;
-        });
-
-        document.getElementById('attendance-body').innerHTML = listHTML;
-        document.getElementById('count-all').innerText = Object.keys(students).length;
-        document.getElementById('count-present').innerText = presentCount;
-        document.getElementById('count-absent').innerText = Object.keys(students).length - presentCount;
-    }
-
-    // --- QUẢN LÝ KHUÔN MẶT ---
     async function renderFaceList() {
-        const query = document.getElementById('face-search').value.toLowerCase();
         const snap = await db.ref('students').once('value');
-        const faces = snap.val() || {};
-        const container = document.getElementById('face-list-container');
-        container.innerHTML = '';
-        
-        let count = 0;
-        Object.keys(faces).forEach(id => {
-            const s = faces[id];
-            if(!s.name.toLowerCase().includes(query)) return;
-            count++;
-            container.innerHTML += `
-                <div class="bg-white p-4 rounded-2xl border shadow-sm flex flex-col items-center text-center">
-                    <img src="${s.photo || ''}" class="w-20 h-20 object-cover rounded-full mb-3 bg-slate-100">
-                    <h4 class="text-xs font-bold uppercase text-slate-700 leading-tight h-8 overflow-hidden">${s.name}</h4>
-                    <p class="text-[10px] text-slate-400 mb-3">STT: ${s.stt}</p>
-                    <button onclick="deleteFace('${id}')" class="w-full py-2 bg-red-50 text-red-500 rounded-lg text-[10px] font-bold uppercase hover:bg-red-500 hover:text-white transition-all">Xóa Face ID</button>
-                </div>`;
+        const container = document.getElementById('face-list-container'); container.innerHTML = '';
+        Object.values(snap.val() || {}).forEach(s => {
+            container.innerHTML += `<div class="bg-white p-2 rounded-2xl border flex flex-col items-center text-center"><img src="${s.photo}" class="w-16 h-16 object-cover rounded-full mb-2"><div class="text-[9px] font-bold uppercase truncate w-full">${s.name}</div><button onclick="deleteFace('${s.stt}')" class="mt-2 text-red-400 hover:text-red-600 text-[10px]"><i class="fas fa-trash"></i></button></div>`;
         });
-        document.getElementById('count-faces').innerText = count;
     }
 
-    async function deleteFace(id) {
-        if(confirm("Xóa dữ liệu khuôn mặt này? Học viên sẽ phải đăng ký lại khi quét mặt.")) {
-            await db.ref(`students/${id}`).remove();
-            renderFaceList();
-        }
-    }
+    async function deleteFace(id) { if(confirm("Xóa Face ID?")) { await db.ref(`students/${id}`).remove(); renderFaceList(); } }
+    async function deleteClass(id) { if(confirm("Xóa lớp?")) { await db.ref(`classes/${id}`).remove(); renderClassList(); } }
 
-    async function deleteClass(id) {
-        if(confirm("Xóa lớp này?")) { await db.ref(`classes/${id}`).remove(); renderClassList(); }
-    }
-
-    window.onload = () => {
-        renderClassList();
-        db.ref('attendance').on('value', () => renderAttendance());
-    };
+    window.onload = () => { renderClassList(); db.ref('attendance').on('value', () => renderAttendance()); };
 </script>
 </body>
 </html>
