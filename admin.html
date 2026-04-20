@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VDC SAFETY - ADMIN DASHBOARD v1.7.7</title>
+    <title>VDC SAFETY - ADMIN DASHBOARD v1.7.8</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-auth-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #004085; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --sidebar-w: 260px; --bg: #f0f2f5; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; display: none; overflow-x: hidden; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; overflow-x: hidden; }
         
         /* SIDEBAR */
         #sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar-w); background: #1a202c; color: white; transition: 0.3s; z-index: 1000; padding: 20px; box-sizing: border-box; }
@@ -35,7 +34,7 @@
         .stat-card h4 { margin: 0; font-size: 12px; color: #718096; text-transform: uppercase; }
         .stat-card .value { font-size: 28px; font-weight: 800; margin-top: 5px; color: #2d3748; }
 
-        /* CLASSIC CONFIG BAR */
+        /* CONFIG BAR */
         .config-bar { display: flex; flex-wrap: wrap; gap: 15px; background: #e2e8f0; padding: 15px; border-radius: 10px; align-items: flex-end; margin-bottom: 15px; }
         .input-group { flex: 1; min-width: 150px; }
         label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #4a5568; text-transform: uppercase; }
@@ -56,19 +55,15 @@
 
         .hidden { display: none !important; }
         #image-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; justify-content: center; align-items: center; }
-        #login-overlay { position: fixed; inset: 0; background: #1a202c; z-index: 9999; display: flex; justify-content: center; align-items: center; }
+        
+        @media (max-width: 768px) {
+            #sidebar { left: calc(var(--sidebar-w) * -1); }
+            #sidebar.open { left: 0; }
+            #main { margin-left: 0; }
+        }
     </style>
 </head>
 <body onclick="resetFilter(event)">
-
-<div id="login-overlay">
-    <div style="background:white; padding:40px; border-radius:20px; text-align:center; max-width:320px; width:90%;">
-        <h2 style="color:var(--primary); margin:0;">VDC ADMIN</h2>
-        <button onclick="login()" style="width:100%; padding:12px; border:1px solid #ddd; background:white; cursor:pointer; border-radius:8px; display:flex; align-items:center; justify-content:center; gap:10px; font-weight:bold; margin-top:20px;">
-            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="20"> Đăng nhập Admin
-        </button>
-    </div>
-</div>
 
 <div id="sidebar">
     <h2 style="color: white; margin-bottom: 30px; font-size: 20px;">VDC SAFETY</h2>
@@ -77,15 +72,13 @@
     <div class="nav-item" onclick="switchTab('tab-add-student', this)">➕ Thêm học viên</div>
     <div class="nav-item" onclick="switchTab('tab-audit', this)">🔍 Soát vé nhanh</div>
     <div class="nav-item" onclick="switchTab('tab-export', this)">📜 Báo cáo tổng</div>
-    <div style="position: absolute; bottom: 20px; width: calc(100% - 40px);">
-        <button class="btn btn-danger" style="width:100%" onclick="logout()">ĐĂNG XUẤT</button>
-    </div>
+    <p style="position: absolute; bottom: 10px; left: 20px; font-size: 10px; color: #4a5568;">v1.7.8 Direct Access</p>
 </div>
 
 <div id="main">
     <div class="top-bar no-print">
         <div class="menu-toggle" onclick="toggleSidebar()">☰</div>
-        <div id="current-class-display" style="font-weight: 800; color: var(--primary);">CHƯA CHỌN LỚP</div>
+        <div id="current-class-display" style="font-weight: 800; color: var(--primary);">ĐANG TẢI...</div>
         <div id="live-clock" style="font-size: 13px; font-weight: 600;"></div>
     </div>
 
@@ -151,9 +144,14 @@
         </div>
     </div>
 
-    <div id="tab-audit" class="hidden"><div class="audit-grid" id="audit-container"></div></div>
+    <div id="tab-audit" class="hidden">
+        <div class="content-box">
+            <div class="audit-grid" id="audit-container"></div>
+        </div>
+    </div>
+
     <div id="tab-export" class="hidden">
-        <div class="content-box"><button class="btn btn-success" onclick="generateFullReport()">XUẤT BÁO CÁO</button> <button class="btn" onclick="window.print()">IN PDF</button></div>
+        <div class="content-box"><button class="btn btn-success" onclick="generateFullReport()">XUẤT BÁO CÁO</button> <button class="btn" style="background:#666; color:white;" onclick="window.print()">IN PDF</button></div>
         <div class="content-box"><table id="full-report-table"><thead id="report-thead"></thead><tbody id="report-tbody"></tbody></table></div>
     </div>
 </div>
@@ -172,32 +170,15 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const auth = firebase.auth();
     let currentFilter = 'all';
-
-    // BẢO MẬT
-    auth.onAuthStateChanged(async (user) => {
-        if (user) {
-            const adminSnap = await db.ref('admins').once('value');
-            const admins = Object.values(adminSnap.val() || {}).map(e => e.toLowerCase().trim());
-            if (admins.includes(user.email.toLowerCase().trim())) {
-                document.getElementById('login-overlay').style.display = 'none';
-                document.body.style.display = 'block';
-                init();
-            } else { alert("Tài khoản không được cấp quyền!"); auth.signOut(); }
-        } else {
-            document.body.style.display = 'block';
-            document.getElementById('login-overlay').style.display = 'flex';
-        }
-    });
-
-    function login() { auth.signInWithRedirect(new firebase.auth.GoogleAuthProvider()); }
-    function logout() { auth.signOut().then(() => location.reload()); }
 
     // ĐIỀU HƯỚNG
     function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('closed');
-        document.getElementById('main').classList.toggle('expanded');
+        const sidebar = document.getElementById('sidebar');
+        const main = document.getElementById('main');
+        sidebar.classList.toggle('closed');
+        sidebar.classList.toggle('open');
+        main.classList.toggle('expanded');
     }
 
     function switchTab(id, el) {
@@ -206,7 +187,10 @@
         ['tab-attendance','tab-config','tab-add-student','tab-audit','tab-export'].forEach(t => document.getElementById(t).classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
         document.getElementById('stats-area').style.display = (id === 'tab-attendance') ? 'grid' : 'none';
-        if(window.innerWidth < 768) toggleSidebar();
+        if(window.innerWidth < 768) {
+            document.getElementById('sidebar').classList.add('closed');
+            document.getElementById('sidebar').classList.remove('open');
+        }
     }
 
     // NGHIỆP VỤ GPS
@@ -225,9 +209,9 @@
         if (lat && lng) {
             const mapUrl = `https://www.google.com/maps?q=${lat},${lng}`;
             document.getElementById('gps-display').innerHTML = `
-                <a href="${mapUrl}" target="_blank" style="color: #004085; text-decoration: underline;">
+                <a href="${mapUrl}" target="_blank" style="color: #004085; text-decoration: underline; font-weight:bold;">
                     ${lat.toFixed(6)}, ${lng.toFixed(6)} 🔗
-                </a> <small>(Bấm để xem bản đồ)</small>`;
+                </a> <br><small>(Bấm để kiểm tra trên Google Maps)</small>`;
         }
     }
 
@@ -292,7 +276,10 @@
                 <td><b style="color:${att?'var(--success)':'#cbd5e0'}">${att?'CÓ MẶT':'VẮNG'}</b></td>
                 <td>${att?`<img src="${att.photo}" class="img-thumb" onclick="openImg('${att.photo}')">`:''}</td>
                 <td>${att?att.time.split(' ngày ')[0]:''}</td>
-                <td><button onclick="delAtt('${sess.date}','${sess.session}','${s.stt}')" style="color:red; border:none; background:none; cursor:pointer;">Xóa</button></td>
+                <td>
+                    <button onclick="delAtt('${sess.date}','${sess.session}','${s.stt}')" style="color:red; border:none; background:none; cursor:pointer; font-weight:bold;">Xóa</button>
+                    <br><button onclick="delID('${s.stt}','${s.name}')" style="color:#718096; border:none; background:none; cursor:pointer; font-size:10px;">Hủy ID</button>
+                </td>
             </tr>`;
         });
         document.getElementById('stat-total').innerText = total;
@@ -305,13 +292,13 @@
         const dept = document.getElementById('add-new-dept').value.trim();
         const loc = document.getElementById('cfg-location').value;
         const cls = document.getElementById('cfg-class').value;
-        if(!name) return;
+        if(!name) return alert("Vui lòng nhập tên!");
         const snap = await db.ref(`master_list/${loc}/${cls}`).once('value');
         let max = 0; Object.keys(snap.val() || {}).forEach(stt => { if(parseInt(stt)>max) max=parseInt(stt); });
         const next = max + 1;
         await db.ref(`master_list/${loc}/${cls}/${next}`).set({ stt: next.toString(), name: name, department: dept, location: loc, class: cls });
         document.getElementById('add-new-name').value = ''; document.getElementById('add-new-dept').value = '';
-        alert("Đã thêm học viên mới!"); renderReport();
+        alert("Đã thêm thành công!"); renderReport();
     }
 
     async function uploadData() {
@@ -327,7 +314,24 @@
     function filterList(t, e) { e.stopPropagation(); currentFilter = t; renderReport(); }
     function resetFilter() { if(currentFilter!=='all'){currentFilter='all'; renderReport();} }
     function openImg(s) { document.getElementById('modal-img').src = s; document.getElementById('image-modal').style.display = 'flex'; }
-    async function delAtt(d, s, id) { if(confirm("Xóa?")) await db.ref(`attendance/${d}/${s}/${id}`).remove(); }
+    async function delAtt(d, s, id) { if(confirm("Xóa điểm danh buổi này?")) await db.ref(`attendance/${d}/${s}/${id}`).remove(); }
+    async function delID(id, name) { if(confirm("Xóa Face ID của " + name + "?")) await db.ref(`students/${id}`).remove(); }
+
+    function renderAudit() {
+        db.ref().once('value', snap => {
+            const data = snap.val();
+            const sess = data.current_session;
+            const att = data.attendance?.[sess.date]?.[sess.session] || {};
+            const container = document.getElementById('audit-container');
+            container.innerHTML = '';
+            Object.keys(att).forEach(stt => {
+                container.innerHTML += `<div class="stat-card" style="text-align:center;">
+                    <img src="${att[stt].photo}" style="width:100%; border-radius:8px; margin-bottom:10px;">
+                    <b style="font-size:12px;">${att[stt].name}</b>
+                </div>`;
+            });
+        });
+    }
 
     async function generateFullReport() {
         const snap = await db.ref().once('value');
@@ -348,6 +352,9 @@
         });
         document.getElementById('report-tbody').innerHTML = b;
     }
+
+    // KHỞI CHẠY
+    window.onload = init;
 </script>
 </body>
 </html>
