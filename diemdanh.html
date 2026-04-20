@@ -2,131 +2,97 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>VDC Admin v1.8.2 - Hệ thống Quản trị OSH</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VDC SAFETY - FACE ID AI v1.5.4</title>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary: #1e293b; --accent: #3b82f6; }
-        body { background: #f1f5f9; font-family: 'Inter', sans-serif; overflow: hidden; }
-        .tab-content { display: none; height: calc(100vh - 40px); overflow-y: auto; padding-bottom: 80px; }
-        .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .nav-btn.active { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
-        
-        #sidebar { transition: all 0.3s ease; width: 260px; }
-        #sidebar.collapsed { width: 80px; }
-        #sidebar.collapsed .nav-text, #sidebar.collapsed .logo-text { display: none; }
-        #sidebar.collapsed .nav-btn { justify-content: center; padding: 12px; }
-
-        /* OVERLAY LOADING */
-        #loading-overlay { display: none; position: fixed; inset: 0; background: rgba(30, 41, 59, 0.85); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .spinner { width: 60px; height: 60px; border: 6px solid rgba(255,255,255,0.1); border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s infinite linear; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Popup Xem ảnh */
-        .popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 100; align-items: center; justify-content: center; }
-        .popup-content { max-width: 90%; max-height: 85%; border-radius: 20px; border: 5px solid white; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        :root { --vdc-blue: #1e293b; --vdc-accent: #3b82f6; }
+        body { background: #f8fafc; font-family: 'Inter', system-ui, sans-serif; }
+        .app-container { max-width: 450px; width: 100%; background: white; border-radius: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.08); overflow: hidden; margin: auto; }
+        #video-container { position: relative; width: 280px; height: 373px; margin: 15px auto; background: #000; border-radius: 30px; overflow: hidden; border: 6px solid #fff; box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        canvas { position: absolute; top: 0; left: 0; transform: scaleX(-1); }
+        .scan-line { position: absolute; width: 100%; height: 2px; background: linear-gradient(to right, transparent, #3b82f6, transparent); box-shadow: 0 0 15px #3b82f6; top: 0; animation: scan 2.5s infinite linear; z-index: 10; }
+        @keyframes scan { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
+        .face-guide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at center, transparent 40%, rgba(30,41,59,0.7) 85%); pointer-events: none; }
+        .btn-vdc { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; transition: 0.3s; }
+        .btn-vdc:disabled { background: #cbd5e1; color: #94a3b8; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="flex min-h-screen">
+<body class="p-4 flex flex-col items-center justify-center min-h-screen">
 
-    <div id="loading-overlay">
-        <div class="spinner mb-4"></div>
-        <p class="text-white font-black tracking-widest text-sm uppercase">VDC Safety đang xử lý dữ liệu...</p>
-        <p class="text-blue-400 text-xs mt-2 italic font-bold">Vui lòng chờ trong giây lát</p>
-    </div>
+<div class="app-container">
+    <div id="session-info" class="bg-slate-900 text-white p-4 text-[10px] tracking-wider text-center uppercase font-bold border-b border-slate-700 italic">Đang tải dữ liệu phiên dạy...</div>
 
-    <div id="imagePopup" class="popup-overlay" onclick="this.style.display='none'">
-        <img id="popupImg" class="popup-content" src="">
-    </div>
-
-    <aside id="sidebar" class="bg-[#1e293b] text-white flex flex-col sticky top-0 h-screen shadow-2xl z-50 no-print">
-        <div class="p-6 border-b border-slate-700 flex items-center justify-between">
-            <div class="flex items-center gap-3 overflow-hidden">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex-shrink-0 flex items-center justify-center font-black text-xl">V</div>
-                <span class="logo-text font-bold text-lg uppercase tracking-tighter tracking-widest">VDC Admin</span>
-            </div>
-            <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white"><i class="fas fa-bars"></i></button>
+    <div class="p-6 text-center">
+        <div class="flex items-center justify-center gap-2 mb-2">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-sm">V</div>
+            <h3 class="text-xl font-black text-slate-800 tracking-tighter uppercase">VDC Safety AI</h3>
         </div>
-        <nav class="flex-1 p-4 space-y-2 mt-4">
-            <button onclick="switchTab('tab-classes', this)" class="nav-btn active w-full flex items-center p-3 rounded-xl transition-all">
-                <i class="fas fa-university w-6 text-center"></i> <span class="nav-text ml-2 font-bold">Lớp học</span>
-            </button>
-            <button onclick="switchTab('tab-attendance', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-check-double w-6 text-center"></i> <span class="nav-text ml-2 font-bold">Điểm danh</span>
-            </button>
-            <button onclick="switchTab('tab-faces', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-user-shield w-6 text-center"></i> <span class="nav-text ml-2 font-bold">Quản lý Face ID</span>
-            </button>
-            <button onclick="switchTab('tab-upload', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-plus-circle w-6 text-center"></i> <span class="nav-text ml-2 font-bold">Nạp danh sách</span>
-            </button>
-        </nav>
-    </aside>
+        <p id="loading-msg" class="text-xs text-red-500 font-bold animate-pulse mb-4">⌛ ĐANG TẢI MÔ HÌNH AI...</p>
 
-    <main class="flex-1 p-6 overflow-hidden">
-        <section id="tab-classes" class="tab-content active">
-            <h2 class="text-2xl font-black text-slate-800 uppercase mb-6">🏫 Danh sách lớp huấn luyện</h2>
-            <div id="class-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
-        </section>
+        <div id="scanner-section">
+            <div id="video-container">
+                <div class="scan-line"></div>
+                <video id="video" autoplay muted playsinline></video>
+                <canvas id="overlay"></canvas>
+                <div class="face-guide"></div>
+            </div>
+            <p id="scan-status" class="text-sm font-bold text-slate-400 mb-4 tracking-wide uppercase">Vui lòng đưa mặt vào khung</p>
+            <button class="btn-vdc w-full py-5 rounded-2xl font-black text-lg shadow-xl" id="btnCapture" onclick="checkFace()" disabled>XÁC NHẬN KHUÔN MẶT</button>
+        </div>
 
-        <section id="tab-attendance" class="tab-content">
-            <div class="flex justify-between items-center mb-6">
-                <div>
-                    <h2 class="text-2xl font-black text-slate-800 uppercase">📊 Dữ liệu điểm danh</h2>
-                    <p id="active-class-tag" class="text-blue-600 font-black text-[10px] uppercase mt-1 tracking-wider"></p>
+        <div id="search-section" class="hidden mt-4 pt-6 border-t border-dashed border-slate-200 text-left fade-in">
+            <div class="bg-orange-50 border-l-4 border-orange-500 p-3 mb-4 text-[11px] text-orange-600">Bạn chưa đăng ký mặt. Vui lòng nhập Họ tên để lấy thông tin từ danh sách lớp.</div>
+            <input type="text" id="inputName" class="w-full p-4 bg-slate-50 border rounded-2xl mb-3 outline-none font-bold text-slate-700" placeholder="NHẬP HỌ TÊN CỦA BẠN...">
+            <button class="w-full py-4 bg-slate-700 text-white rounded-2xl font-bold" onclick="searchStudent()">TÌM THÔNG TIN</button>
+        </div>
+
+        <div id="verify-section" class="hidden mt-4 text-left bg-blue-50/50 p-5 rounded-3xl border border-blue-100 fade-in">
+            <h4 class="text-blue-700 font-black uppercase text-xs mb-4 text-center">Xác nhận hồ sơ học viên</h4>
+            <img id="preview-photo" class="w-24 h-32 object-cover rounded-xl border-4 border-white shadow-md mx-auto mb-6 bg-slate-200">
+            <div class="space-y-4 text-[10px] font-bold text-slate-400 uppercase">
+                <div class="flex gap-3">
+                    <div class="flex-1">STT<input type="text" id="c1" disabled class="w-full p-2 bg-slate-100 border-none rounded-lg font-bold text-slate-800"></div>
+                    <div class="flex-[3]">Họ và tên<input type="text" id="c2" disabled class="w-full p-2 bg-slate-100 border-none rounded-lg font-bold text-slate-800 uppercase"></div>
                 </div>
-                <div class="flex gap-2">
-                    <button onclick="setFilter('absent')" class="px-4 py-2 bg-red-50 text-red-500 rounded-xl text-[10px] font-black uppercase">Vắng: <span id="count-absent">0</span></button>
-                    <button onclick="setFilter('present')" class="px-4 py-2 bg-green-50 text-green-600 rounded-xl text-[10px] font-black uppercase">Có mặt: <span id="count-present">0</span></button>
-                    <button onclick="setFilter('all')" class="px-4 py-2 bg-slate-100 text-slate-500 rounded-xl text-[10px] font-black uppercase underline">Tổng: <span id="count-all">0</span></button>
+                <div>Phái<select id="c3" class="w-full p-3 bg-white border rounded-xl outline-none text-slate-700 font-bold"><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></div>
+                <div>Ngày sinh (dd/mm/yyyy)<input type="text" id="c4" class="w-full p-3 bg-white border rounded-xl outline-none text-slate-700 font-bold" placeholder="dd/mm/yyyy"></div>
+                <div>Bậc An Toàn<input type="text" id="c5" class="w-full p-3 bg-white border rounded-xl outline-none text-slate-700 font-bold"></div>
+                <div>Chức danh / Đơn vị
+                    <div class="flex gap-2 mt-1">
+                        <input type="text" id="c6" placeholder="Chức danh" class="w-1/2 p-3 bg-white border rounded-xl text-slate-700 font-bold">
+                        <input type="text" id="c7" placeholder="Đơn vị" class="w-1/2 p-3 bg-white border rounded-xl text-slate-700 font-bold">
+                    </div>
                 </div>
             </div>
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                <table class="w-full text-left text-[12px]">
-                    <thead>
-                        <tr class="bg-slate-50 text-slate-400 font-bold uppercase text-[9px]">
-                            <th class="p-4 w-10 text-center">TT</th>
-                            <th class="p-4 w-12 text-center">Ảnh</th>
-                            <th class="p-4">Học viên</th>
-                            <th class="p-4">Ngày sinh</th>
-                            <th class="p-4">Bậc AT</th>
-                            <th class="p-4">Đơn vị</th>
-                            <th class="p-4">Giờ quét</th>
-                            <th class="p-4 w-10 text-center">Hủy</th>
-                        </tr>
-                    </thead>
-                    <tbody id="attendance-body" class="divide-y divide-slate-50"></tbody>
-                </table>
-            </div>
-        </section>
+            <button class="w-full mt-6 py-5 bg-green-600 text-white rounded-2xl font-black text-lg shadow-lg uppercase" onclick="saveFinal()">LƯU & XÁC NHẬN MẶT</button>
+            <button class="w-full mt-2 text-slate-400 font-bold text-xs text-center" onclick="location.reload()">QUAY LẠI</button>
+        </div>
 
-        <section id="tab-faces" class="tab-content">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-black text-slate-800 uppercase">🛡️ Quản lý Face ID học viên</h2>
-                <div class="bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-black text-[10px] uppercase">Tổng: <span id="total-faces">0</span></div>
-            </div>
-            <div class="bg-white p-4 rounded-2xl shadow-sm border mb-6">
-                <input type="text" id="face-search" oninput="renderFaceList()" placeholder="Tìm tên học viên để xóa Face ID đăng ký nhầm..." class="w-full p-4 bg-slate-50 border rounded-xl outline-none font-bold focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div id="face-list-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
-        </section>
-
-        <section id="tab-upload" class="tab-content">
-            <h2 class="text-2xl font-black text-slate-800 uppercase mb-6">📥 Nạp lớp mới</h2>
-            <div class="bg-white p-8 rounded-[2rem] shadow-sm border space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="text" id="new-class-name" class="p-4 bg-slate-50 border rounded-2xl outline-none font-bold" placeholder="Tên lớp (VD: PC Vĩnh Long - Lớp 1)">
-                    <input type="text" id="new-location" class="p-4 bg-slate-50 border rounded-2xl outline-none" placeholder="Địa điểm tập huấn">
+        <div id="result-screen" class="hidden mt-4 fade-in">
+            <div class="bg-white p-6 rounded-[40px] shadow-2xl border border-green-50 shadow-green-100 text-center">
+                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl shadow-lg shadow-green-100"><i class="fas fa-check"></i></div>
+                <img id="res-photo" class="w-32 h-44 object-cover rounded-2xl border-4 border-white shadow-md mx-auto mb-4 bg-slate-100">
+                <h2 class="text-xl font-black text-slate-800 uppercase" id="res-name"></h2>
+                <p class="text-xs font-bold text-green-600 mt-2" id="res-time"></p>
+                <div class="mt-4 p-4 bg-slate-50 rounded-2xl text-left text-[13px] space-y-2 border border-slate-100">
+                    <p class="flex justify-between border-b border-slate-200 pb-2"><span>Số thứ tự:</span> <b id="res-stt"></b></p>
+                    <p class="flex justify-between pt-1"><span>Đơn vị:</span> <b id="res-unit" class="text-right truncate ml-4"></b></p>
                 </div>
-                <p class="text-[10px] text-red-500 font-bold uppercase px-1"><i class="fas fa-info-circle mr-1"></i> Chấp nhận mọi ký tự đặc biệt trong tên lớp.</p>
-                <textarea id="csvData" rows="10" class="w-full p-4 bg-slate-50 border rounded-2xl font-mono text-[10px]" placeholder="Dán dữ liệu Excel 10 cột (Ngày sinh dd/MM/yyyy) tại đây..."></textarea>
-                <button onclick="uploadData()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg shadow-xl hover:bg-blue-600 transition-all uppercase tracking-widest">LƯU TRỮ LỚP HỌC</button>
+                <button class="w-full mt-6 py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase text-xs" onclick="location.reload()">TIẾP TỤC</button>
             </div>
-        </section>
-    </main>
+        </div>
+    </div>
+</div>
+
+<footer class="mt-8 text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold">Hệ thống VDC Safety v1.5.4 | <span class="text-slate-800">Mr. An Toàn</span></footer>
 
 <script>
     const firebaseConfig = {
@@ -141,149 +107,132 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    function showLoading(status) { document.getElementById('loading-overlay').style.display = status ? 'flex' : 'none'; }
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
-    function openPopup(src) { document.getElementById('popupImg').src = src; document.getElementById('imagePopup').style.display = 'flex'; }
+    let lastDescriptor, isDetecting, faceMatcher, session, currentStudent, capturedPhoto;
 
-    function switchTab(id, btn) {
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.nav-btn').forEach(l => l.classList.remove('active'));
-        btn.classList.add('active');
-        if(id === 'tab-faces') renderFaceList();
-        if(id === 'tab-attendance') renderAttendance();
-        if(id === 'tab-classes') renderClassList();
-    }
-
-    // NẠP DỮ LIỆU LỚP
-    async function uploadData() {
-        let className = document.getElementById('new-class-name').value.trim();
-        const loc = document.getElementById('new-location').value.trim();
-        const raw = document.getElementById('csvData').value.trim();
-        if(!className || !raw) return alert("Thiếu tên lớp hoặc dữ liệu!");
-
-        // LÀM SẠCH KÝ TỰ ĐẶC BIỆT CHO FIREBASE PATH
-        const safeClassName = className.replace(/[\.\#\$\[\]]/g, '-');
-        showLoading(true);
-
-        const students = {};
-        raw.split('\n').forEach(line => {
-            const c = line.split('\t');
-            if(c.length >= 2) {
-                const stt = c[0].trim();
-                const safeSTT = stt.replace(/[\.\#\$\[\]]/g, '-');
-                students[safeSTT] = { stt: stt, name: c[1]||"", gender: c[2]||"", dob: c[3]||"", rank: c[4]||"", position: c[5]||"", department: c[6]||"", company: c[7]||"" };
-            }
-        });
-
+    async function initAI() {
+        const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
         try {
-            await db.ref(`classes/${safeClassName}`).set({ name: className, location: loc, students: students, createdAt: new Date().toLocaleDateString('vi-VN') });
-            setTimeout(() => {
-                showLoading(false);
-                alert("Nạp thành công lớp: " + className);
-                document.getElementById('csvData').value = "";
-                renderClassList();
-                switchTab('tab-classes', document.querySelector('[onclick*="tab-classes"]'));
+            await Promise.all([
+                faceapi.nets.tinyFaceDetector.loadFromUri(URL),
+                faceapi.nets.faceLandmark68Net.loadFromUri(URL),
+                faceapi.nets.faceRecognitionNet.loadFromUri(URL)
+            ]);
+            document.getElementById('loading-msg').style.display = 'none';
+            db.ref('current_session').on('value', snap => {
+                session = snap.val();
+                if(session) document.getElementById('session-info').innerHTML = `<i class="fas fa-university mr-1"></i> LỚP: ${session.class}`;
+            });
+            startCamera();
+            loadFaceDB();
+        } catch (e) { document.getElementById('loading-msg').innerHTML = "❌ LỖI TẢI AI!"; }
+    }
+
+    async function startCamera() {
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        const video = document.getElementById('video');
+        video.srcObject = s;
+        isDetecting = true;
+        video.onplay = () => {
+            const canvas = document.getElementById('overlay');
+            faceapi.matchDimensions(canvas, { width: 280, height: 373 });
+            setInterval(async () => {
+                if(!isDetecting) return;
+                const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
+                if(det) {
+                    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                    faceapi.draw.drawDetections(canvas, faceapi.resizeResults(det, { width: 280, height: 373 }));
+                    lastDescriptor = det.descriptor;
+                    document.getElementById('btnCapture').disabled = false;
+                    document.getElementById('scan-status').innerHTML = "✅ SẴN SÀNG NHẬN DIỆN";
+                }
             }, 500);
-        } catch (e) { showLoading(false); alert("Lỗi nạp liệu: " + e.message); }
+        };
     }
 
-    async function renderClassList() {
-        const snap = await db.ref('classes').once('value');
-        const container = document.getElementById('class-list-container');
-        container.innerHTML = '';
-        Object.keys(snap.val() || {}).forEach(id => {
-            const cls = snap.val()[id];
-            container.innerHTML += `
-                <div class="bg-white p-5 rounded-3xl border shadow-sm relative group">
-                    <button onclick="deleteClass('${id}')" class="absolute top-3 right-3 text-slate-200 hover:text-red-500 transition-colors"><i class="fas fa-trash-alt"></i></button>
-                    <h3 class="font-black text-slate-800 text-sm uppercase truncate pr-6">${cls.name}</h3>
-                    <p class="text-[10px] text-slate-400 mt-1 uppercase font-bold tracking-tight">${cls.location}</p>
-                    <button onclick="activateClass('${id}')" class="w-full mt-4 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700">Mở điểm danh</button>
-                </div>`;
-        });
-    }
-
-    async function activateClass(id) {
-        showLoading(true);
-        const snap = await db.ref(`classes/${id}`).once('value');
-        const cls = snap.val(); const now = new Date();
-        const dateStr = `${now.getDate().toString().padStart(2,'0')}-${(now.getMonth()+1).toString().padStart(2,'0')}-${now.getFullYear()}`;
-        await db.ref('current_session').set({ class: cls.name, location: cls.location, date: dateStr, session: now.getHours() < 12 ? "Sáng" : "Chiều", source: id });
-        setTimeout(() => { showLoading(false); renderAttendance(); switchTab('tab-attendance', document.querySelector('[onclick*="tab-attendance"]')); }, 300);
-    }
-
-    // ĐIỂM DANH CHI TIẾT
-    let currentFilter = 'all';
-    function setFilter(type) { currentFilter = type; renderAttendance(); }
-    async function renderAttendance() {
-        const snap = await db.ref().once('value');
-        const data = snap.val() || {};
-        const sess = data.current_session || {};
-        if(!sess.class) return;
-        document.getElementById('active-class-tag').innerText = `PHÊN: ${sess.class} | ${sess.date} (${sess.session})`;
-        
-        const students = data.classes[sess.source]?.students || {};
-        const globalProfile = data.students || {};
-        const attRecords = data.attendance?.[sess.date]?.[sess.session] || {};
-        
-        let present = 0; let html = '';
-        Object.values(students).sort((a,b)=>a.stt-b.stt).forEach(s => {
-            const hasAtt = attRecords[s.stt];
-            const profile = globalProfile[s.stt] || s;
-            if(hasAtt) present++;
-            if(currentFilter === 'present' && !hasAtt) return;
-            if(currentFilter === 'absent' && hasAtt) return;
-
-            html += `
-                <tr class="hover:bg-slate-50 transition-all ${!hasAtt ? 'opacity-50' : ''}">
-                    <td class="p-4 text-center text-slate-400 font-mono">${s.stt}</td>
-                    <td class="p-2 text-center">
-                        ${hasAtt ? `<img src="${hasAtt.photo}" onclick="openPopup(this.src)" class="w-10 h-12 object-cover rounded mx-auto border cursor-zoom-in hover:scale-110 transition-all">` : '<i class="fas fa-user-clock text-slate-100 text-lg"></i>'}
-                    </td>
-                    <td class="p-4 font-black text-slate-700 uppercase">${s.name}</td>
-                    <td class="p-4 font-bold text-slate-500">${profile.dob || '-'}</td>
-                    <td class="p-4 text-center"><span class="bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-black text-[10px]">${profile.rank || '-'}</span></td>
-                    <td class="p-4 text-slate-500 truncate max-w-[150px] font-medium">${profile.department || profile.company || '-'}</td>
-                    <td class="p-4 font-mono text-blue-500 font-black">${hasAtt ? hasAtt.time.split(' ngày ')[0] : '--:--'}</td>
-                    <td class="p-4 text-center">
-                        ${hasAtt ? `<i class="fas fa-times-circle text-red-200 hover:text-red-600 cursor-pointer text-lg" onclick="deleteAtt('${sess.date}','${sess.session}','${s.stt}')"></i>` : ''}
-                    </td>
-                </tr>`;
-        });
-        document.getElementById('attendance-body').innerHTML = html;
-        document.getElementById('count-all').innerText = Object.keys(students).length;
-        document.getElementById('count-present').innerText = present;
-        document.getElementById('count-absent').innerText = Object.keys(students).length - present;
-    }
-
-    async function deleteAtt(date, sess, stt) { if(confirm("Hủy kết quả điểm danh này?")) { await db.ref(`attendance/${date}/${sess}/${stt}`).remove(); renderAttendance(); } }
-
-    // FACE ID MANAGEMENT
-    async function renderFaceList() {
+    async function loadFaceDB() {
         const snap = await db.ref('students').once('value');
-        const faces = snap.val() || {};
-        const query = document.getElementById('face-search').value.toLowerCase();
-        const container = document.getElementById('face-list-container');
-        container.innerHTML = '';
-        let count = 0;
-        Object.values(faces).forEach(s => {
-            if(!s.name.toLowerCase().includes(query)) return;
-            count++;
-            container.innerHTML += `
-                <div class="bg-white p-3 rounded-2xl border shadow-sm flex flex-col items-center text-center">
-                    <img src="${s.photo}" class="w-16 h-20 object-cover rounded-xl mb-2 bg-slate-50 border">
-                    <div class="text-[9px] font-black uppercase text-slate-700 truncate w-full px-1">${s.name}</div>
-                    <button onclick="deleteFace('${s.stt}')" class="mt-3 w-full py-1.5 bg-red-50 text-red-500 rounded-lg text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-all">Xóa Face ID</button>
-                </div>`;
-        });
-        document.getElementById('total-faces').innerText = count;
+        const data = snap.val() || {};
+        const labeled = Object.values(data).filter(u => u.descriptor).map(u => new faceapi.LabeledFaceDescriptors(u.stt.toString(), [new Float32Array(u.descriptor)]));
+        if(labeled.length > 0) faceMatcher = new faceapi.FaceMatcher(labeled, 0.55);
     }
 
-    async function deleteFace(id) { if(confirm("Xóa dữ liệu khuôn mặt?\nHọc viên sẽ phải đăng ký lại từ đầu.")) { await db.ref(`students/${id}`).remove(); renderFaceList(); } }
-    async function deleteClass(id) { if(confirm("Bạn có chắc muốn xóa vĩnh viễn lớp này?")) { await db.ref(`classes/${id}`).remove(); renderClassList(); } }
-    
-    window.onload = () => { renderClassList(); db.ref('attendance').on('value', () => renderAttendance()); };
+    async function checkFace() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 450; canvas.height = 600;
+        const v = document.getElementById('video');
+        canvas.getContext('2d').drawImage(v, (v.videoWidth-(v.videoHeight*0.75))/2, v.videoHeight*0.05, v.videoHeight*0.75, v.videoHeight*0.95, 0, 0, 450, 600);
+        capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
+
+        if(faceMatcher && lastDescriptor) {
+            const match = faceMatcher.findBestMatch(lastDescriptor);
+            if(match.label !== 'unknown') {
+                const snap = await db.ref(`classes/${session.source}/students/${match.label}`).once('value');
+                if(snap.val()) {
+                    currentStudent = snap.val();
+                    currentStudent.photo = capturedPhoto; 
+                    return saveAttendance(currentStudent);
+                }
+            }
+        }
+        document.getElementById('scanner-section').style.display = 'none';
+        document.getElementById('search-section').classList.remove('hidden');
+    }
+
+    async function searchStudent() {
+        const name = document.getElementById('inputName').value.trim().toLowerCase();
+        const snap = await db.ref(`classes/${session.source}/students`).once('value');
+        const list = snap.val() || {};
+        // Tìm học viên theo tên (không phân biệt hoa thường)
+        const found = Object.values(list).find(u => u.name && u.name.toLowerCase() === name);
+        
+        if(found) {
+            currentStudent = found;
+            document.getElementById('search-section').style.display = 'none';
+            document.getElementById('verify-section').classList.remove('hidden');
+            
+            // TỰ ĐỘNG ĐIỀN THÔNG TIN TỪ MASTER LIST CỦA ADMIN
+            document.getElementById('preview-photo').src = capturedPhoto;
+            document.getElementById('c1').value = found.stt || "";
+            document.getElementById('c2').value = found.name || "";
+            document.getElementById('c3').value = found.gender || "Nam";
+            document.getElementById('c4').value = found.dob || ""; // Ngày sinh dd/mm/yyyy từ Excel
+            document.getElementById('c5').value = found.rank || "";
+            document.getElementById('c6').value = found.position || "";
+            document.getElementById('c7').value = found.department || found.company || "";
+        } else { alert("Hệ thống không tìm thấy tên này trong danh sách lớp!"); }
+    }
+
+    async function saveFinal() {
+        // Lấy dữ liệu từ các ô đã điền (có thể cho phép học viên sửa nếu cần)
+        const data = {
+            ...currentStudent,
+            gender: document.getElementById('c3').value,
+            dob: document.getElementById('c4').value.trim(),
+            rank: document.getElementById('c5').value.trim(),
+            position: document.getElementById('c6').value.trim(),
+            department: document.getElementById('c7').value.trim(),
+            descriptor: Array.from(lastDescriptor),
+            photo: capturedPhoto,
+            time: new Date().toLocaleTimeString('vi-VN')
+        };
+        await db.ref('students/' + data.stt).set(data);
+        saveAttendance(data);
+    }
+
+    async function saveAttendance(st) {
+        const timeStr = new Date().toLocaleTimeString('vi-VN') + " ngày " + new Date().toLocaleDateString('vi-VN');
+        await db.ref(`attendance/${session.date}/${session.session}/${st.stt}`).set({ name: st.name, time: timeStr, photo: st.photo || "" });
+        isDetecting = false;
+        document.getElementById('scanner-section').style.display = 'none';
+        document.getElementById('verify-section').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('res-photo').src = st.photo || "";
+        document.getElementById('res-stt').innerText = st.stt;
+        document.getElementById('res-name').innerText = st.name.toUpperCase();
+        document.getElementById('res-unit').innerText = st.department || st.company || "";
+        document.getElementById('res-time').innerText = "ĐIỂM DANH THÀNH CÔNG LÚC: " + timeStr;
+    }
+    initAI();
 </script>
 </body>
 </html>
