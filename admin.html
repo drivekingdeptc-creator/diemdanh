@@ -3,89 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VDC SAFETY - ADMIN DASHBOARD v1.8.2</title>
+    <title>VDC SAFETY - ADMIN v1.8.3 (Tinh Gọn)</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #004085; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --sidebar-w: 260px; --bg: #f0f2f5; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); margin: 0; overflow-x: hidden; }
-        
-        /* SIDEBAR */
         #sidebar { position: fixed; left: 0; top: 0; bottom: 0; width: var(--sidebar-w); background: #1a202c; color: white; transition: 0.3s; z-index: 1000; padding: 20px; box-sizing: border-box; }
         #sidebar.closed { left: calc(var(--sidebar-w) * -1); }
         .nav-item { padding: 12px 15px; margin-bottom: 8px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; font-weight: 500; color: #cbd5e0; }
         .nav-item:hover, .nav-item.active { background: var(--primary); color: white; }
-        
-        /* MAIN CONTENT */
         #main { margin-left: var(--sidebar-w); transition: 0.3s; min-height: 100vh; padding: 20px; }
         #main.expanded { margin-left: 0; }
-        
-        /* TOP BAR */
         .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; background: white; padding: 15px 25px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .menu-toggle { cursor: pointer; font-size: 24px; color: var(--primary); }
-        
-        /* STATS CARDS */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; border-left: 5px solid #ddd; }
+        .stat-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); cursor: pointer; border-left: 5px solid #ddd; }
         .stat-card.present { border-left-color: var(--success); }
         .stat-card.absent { border-left-color: var(--danger); }
-        .stat-card .value { font-size: 28px; font-weight: 800; margin-top: 5px; color: #2d3748; }
-
-        /* CONFIG AREA */
+        .value { font-size: 28px; font-weight: 800; margin-top: 5px; color: #2d3748; }
+        .content-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
         .config-bar { display: flex; flex-wrap: wrap; gap: 15px; background: #e2e8f0; padding: 15px; border-radius: 10px; align-items: flex-end; margin-bottom: 15px; }
-        .input-group { flex: 1; min-width: 150px; }
         label { display: block; font-size: 11px; font-weight: bold; margin-bottom: 5px; color: #4a5568; text-transform: uppercase; }
         select, input, textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e0; font-size: 14px; box-sizing: border-box; }
-
-        .content-box { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        
         table { width: 100%; border-collapse: collapse; }
-        th { background: #f7fafc; color: #4a5568; font-size: 11px; text-transform: uppercase; padding: 12px; border-bottom: 2px solid #edf2f7; }
+        th { background: #f7fafc; padding: 12px; border-bottom: 2px solid #edf2f7; font-size: 11px; text-transform: uppercase; }
         td { padding: 10px; border-bottom: 1px solid #edf2f7; font-size: 13px; text-align: center; }
-        .img-thumb { width: 40px; height: 55px; object-fit: cover; border-radius: 4px; }
-
-        .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.2s; }
+        .btn { padding: 10px 18px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-warning { background: var(--warning); color: #000; }
         .hidden { display: none !important; }
-        
-        @media (max-width: 768px) {
-            #sidebar { left: calc(var(--sidebar-w) * -1); }
-            #sidebar.open { left: 0; }
-            #main { margin-left: 0; }
-        }
+        @media (max-width: 768px) { #sidebar { left: calc(var(--sidebar-w) * -1); } #sidebar.open { left: 0; } #main { margin-left: 0; } }
     </style>
 </head>
 <body onclick="resetFilter(event)">
 
 <div id="sidebar">
     <h2 style="color: white; margin-bottom: 30px; font-size: 20px;">VDC SAFETY</h2>
-    <div class="nav-item active" onclick="switchTab('tab-attendance', this)">📊 Điểm danh lớp</div>
-    <div class="nav-item" onclick="switchTab('tab-config', this)">⚙️ Thiết lập lớp học</div>
-    <div class="nav-item" onclick="switchTab('tab-add-student', this)">➕ Thêm học viên</div>
-    <div class="nav-item" onclick="switchTab('tab-audit', this)">🔍 Soát vé nhanh</div>
+    <div class="nav-item active" onclick="switchTab('tab-attendance', this)">📊 Điểm danh</div>
+    <div class="nav-item" onclick="switchTab('tab-config', this)">⚙️ Thiết lập phiên</div>
+    <div class="nav-item" onclick="switchTab('tab-add-student', this)">➕ Quản lý danh sách</div>
     <div class="nav-item" onclick="switchTab('tab-export', this)">📜 Báo cáo tổng</div>
-    <p style="position: absolute; bottom: 10px; left: 20px; font-size: 10px; color: #4a5568;">v1.8.2 Final Edition</p>
+    <p style="position: absolute; bottom: 10px; left: 20px; font-size: 10px; color: #4a5568;">v1.8.3 No-Class Mode</p>
 </div>
 
 <div id="main">
     <div class="top-bar">
         <div class="menu-toggle" onclick="toggleSidebar()">☰</div>
-        <div id="current-class-display" style="font-weight: 800; color: var(--primary);">ĐANG TẢI...</div>
+        <div id="current-info-display" style="font-weight: 800; color: var(--primary);">ĐANG TẢI...</div>
         <div id="live-clock" style="font-size: 13px; font-weight: 600;"></div>
     </div>
 
     <div id="stats-area" class="stats-grid">
-        <div class="stat-card" onclick="filterList('all', event)">
-            <h4>Sĩ số</h4><div class="value" id="stat-total">0</div>
-        </div>
-        <div class="stat-card present" onclick="filterList('present', event)">
-            <h4>Hiện diện</h4><div class="value" id="stat-present" style="color:var(--success)">0</div>
-        </div>
-        <div class="stat-card absent" onclick="filterList('absent', event)">
-            <h4>Vắng</h4><div class="value" id="stat-absent" style="color:var(--danger)">0</div>
-        </div>
+        <div class="stat-card" onclick="filterList('all', event)"><h4>Tổng số</h4><div class="value" id="stat-total">0</div></div>
+        <div class="stat-card present" onclick="filterList('present', event)"><h4>Có mặt</h4><div class="value" id="stat-present" style="color:var(--success)">0</div></div>
+        <div class="stat-card absent" onclick="filterList('absent', event)"><h4>Vắng</h4><div class="value" id="stat-absent" style="color:var(--danger)">0</div></div>
     </div>
 
     <div id="tab-attendance" class="content-box">
@@ -99,19 +71,16 @@
 
     <div id="tab-config" class="hidden">
         <div class="content-box">
-            <h3>Cấu hình phiên dạy</h3>
+            <h3>Thiết lập thời gian & Vị trí</h3>
             <div class="config-bar">
-                <div class="input-group"><label>ĐỊA ĐIỂM</label><select id="cfg-location" onchange="loadClasses()"></select></div>
-                <div class="input-group"><label>LỚP HỌC</label><select id="cfg-class" onchange="saveSession()"></select></div>
-                <div class="input-group"><label>NGÀY</label><input type="text" id="cfg-date" onchange="saveSession()"></div>
-                <div class="input-group"><label>BUỔI</label><select id="cfg-session" onchange="saveSession()"><option value="Sáng">Sáng</option><option value="Chiều">Chiều</option></select></div>
+                <div style="flex:1;"><label>NGÀY ĐIỂM DANH</label><input type="text" id="cfg-date" onchange="saveSession()"></div>
+                <div style="flex:1;"><label>BUỔI</label><select id="cfg-session" onchange="saveSession()"><option value="Sáng">Sáng</option><option value="Chiều">Chiều</option></select></div>
             </div>
-            
-            <div style="background: #fff8e1; border: 1px solid #ffe082; padding: 15px; border-radius: 10px;">
-                <div id="gps-display" style="font-weight: bold; color: var(--primary); margin-bottom: 10px;">Chưa ghim vị trí</div>
-                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                    <input type="text" id="manual-gps" placeholder="Dán tọa độ từ Maps (VD: 10.8, 106.6)" style="flex:1; min-width:200px;">
-                    <button class="btn btn-primary" onclick="saveManualGPS()">LƯU TỌA ĐỘ</button>
+            <div style="background:#fff8e1; border:1px solid #ffe082; padding:15px; border-radius:10px; margin-top:10px;">
+                <div id="gps-display" style="font-weight:bold; color:var(--primary); margin-bottom:10px;">Chưa ghim vị trí</div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <input type="text" id="manual-gps" placeholder="Dán tọa độ (VD: 10.82, 106.62)" style="flex:1;">
+                    <button class="btn btn-primary" onclick="saveManualGPS()">LƯU VỊ TRÍ</button>
                     <button class="btn btn-warning" onclick="pinGPS()">🌐 GHIM TỰ ĐỘNG</button>
                 </div>
             </div>
@@ -120,18 +89,16 @@
 
     <div id="tab-add-student" class="hidden">
         <div class="content-box">
-            <h3>Thêm học viên lẻ</h3>
-            <div style="display:flex; gap:10px;"><input type="text" id="add-new-name" placeholder="Họ tên..."><input type="text" id="add-new-dept" placeholder="Đơn vị..."><button class="btn btn-primary" onclick="addSingleStudent()">THÊM</button></div>
-        </div>
-        <div class="content-box">
-            <h3>Nạp từ Excel (10 cột)</h3>
-            <textarea id="csvData" style="height:150px; margin-bottom:10px;"></textarea>
-            <button class="btn btn-primary" style="width:100%" onclick="uploadData()">XÁC NHẬN NẠP</button>
+            <h3>Thêm học viên</h3>
+            <textarea id="csvData" style="height:150px; margin-bottom:10px;" placeholder="Dán STT, Tên, Đơn vị..."></textarea>
+            <button class="btn btn-primary" style="width:100%" onclick="uploadData()">NẠP DANH SÁCH TỔNG</button>
         </div>
     </div>
 
-    <div id="tab-audit" class="hidden"><div id="audit-container" class="stats-grid"></div></div>
-    <div id="tab-export" class="hidden"><div class="content-box"><button class="btn btn-primary" onclick="generateFullReport()">TẠO BÁO CÁO</button></div><div class="content-box"><table id="full-report-table"><thead id="report-thead"></thead><tbody id="report-tbody"></tbody></table></div></div>
+    <div id="tab-export" class="hidden">
+        <div class="content-box"><button class="btn btn-primary" onclick="generateFullReport()">XUẤT DỮ LIỆU</button></div>
+        <div class="content-box"><table id="full-report-table"><thead id="report-thead"></thead><tbody id="report-tbody"></tbody></table></div>
+    </div>
 </div>
 
 <script>
@@ -149,31 +116,16 @@
     let currentFilter = 'all';
 
     function toggleSidebar() { document.getElementById('sidebar').classList.toggle('closed'); document.getElementById('main').classList.toggle('expanded'); }
-    
     function switchTab(id, el) {
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active')); el.classList.add('active');
-        ['tab-attendance','tab-config','tab-add-student','tab-audit','tab-export'].forEach(t => document.getElementById(t).classList.add('hidden'));
+        ['tab-attendance','tab-config','tab-add-student','tab-export'].forEach(t => document.getElementById(t).classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
-        document.getElementById('stats-area').style.display = (id === 'tab-attendance') ? 'grid' : 'none';
-        if(id === 'tab-audit') renderAudit();
-    }
-
-    async function loadClasses() {
-        const loc = document.getElementById('cfg-location').value;
-        if (!loc) return;
-        const snap = await db.ref(`master_list/${loc}`).once('value');
-        const classes = snap.val() || {};
-        document.getElementById('cfg-class').innerHTML = Object.keys(classes).map(c => `<option value="${c}">${c}</option>`).join('');
-        saveSession();
     }
 
     async function saveSession() {
-        const loc = document.getElementById('cfg-location').value;
-        const cls = document.getElementById('cfg-class').value;
         const date = document.getElementById('cfg-date').value.replace(/\//g, '-');
         const sess = document.getElementById('cfg-session').value;
-        if(!loc || !cls) return;
-        await db.ref('current_session').update({ location: loc, class: cls, session: sess, date: date });
+        await db.ref('current_session').update({ date: date, session: sess });
         renderReport();
     }
 
@@ -181,55 +133,57 @@
         const snap = await db.ref().once('value');
         const data = snap.val() || {};
         const sess = data.current_session || {};
-        const students = (data.master_list?.[sess.location]?.[sess.class]) || {};
+        const master = data.master_list_total || {}; // Sử dụng danh sách tổng
         const attendance = (data.attendance?.[sess.date]?.[sess.session]) || {};
-        const registered = data.students || {};
         
-        document.getElementById('current-class-display').innerText = `${sess.class} - ${sess.location}`;
+        document.getElementById('current-info-display').innerText = `NGÀY: ${sess.date} | BUỔI: ${sess.session}`;
         const tbody = document.getElementById('body-report'); tbody.innerHTML = '';
-        let present = 0; let total = Object.keys(students).length;
+        let present = 0; let total = Object.keys(master).length;
 
-        Object.values(students).sort((a,b)=>parseInt(a.stt)-parseInt(b.stt)).forEach(s => {
+        Object.values(master).sort((a,b)=>parseInt(a.stt)-parseInt(b.stt)).forEach(s => {
             const att = attendance[s.stt];
             if(att) present++;
             if (currentFilter === 'present' && !att) return;
             if (currentFilter === 'absent' && att) return;
-            tbody.innerHTML += `<tr><td>${s.stt}</td><td style="text-align:left;"><b>${s.name}</b><br><small>${registered[s.stt]?'● Đã có ID':'○ Trống'}</small></td><td>${s.department||""}</td><td><b style="color:${att?'var(--success)':'#ccc'}">${att?'CÓ MẶT':'VẮNG'}</b></td><td>${att?`<img src="${att.photo}" class="img-thumb">`:''}</td><td>${att?att.time.split(' ngày ')[0]:''}</td><td><button onclick="delAtt('${sess.date}','${sess.session}','${s.stt}')" style="color:red;border:none;background:none;cursor:pointer;">Xóa</button></td></tr>`;
+            tbody.innerHTML += `<tr><td>${s.stt}</td><td style="text-align:left;"><b>${s.name}</b></td><td>${s.department||""}</td><td><b style="color:${att?'var(--success)':'#ccc'}">${att?'CÓ MẶT':'VẮNG'}</b></td><td>${att?`<img src="${att.photo}" style="width:40px;height:50px;object-fit:cover;">`:''}</td><td>${att?att.time.split(' ngày ')[0]:''}</td><td><button onclick="delAtt('${sess.date}','${sess.session}','${s.stt}')" style="color:red;border:none;background:none;cursor:pointer;">Xóa</button></td></tr>`;
         });
         document.getElementById('stat-total').innerText = total;
         document.getElementById('stat-present').innerText = present;
         document.getElementById('stat-absent').innerText = total - present;
-        if(sess.lat) document.getElementById('gps-display').innerHTML = `📍 Tọa độ hiện tại: <a href="https://www.google.com/maps?q=$${sess.lat},${sess.lng}" target="_blank" style="color:blue;">${sess.lat.toFixed(5)}, ${sess.lng.toFixed(5)}</a>`;
+        if(sess.lat) document.getElementById('gps-display').innerHTML = `📍 Vị trí: <a href="http://google.com/maps?q=${sess.lat},${sess.lng}" target="_blank">${sess.lat.toFixed(5)}, ${sess.lng.toFixed(5)}</a>`;
+    }
+
+    async function uploadData() {
+        const raw = document.getElementById('csvData').value.trim();
+        if(!raw) return;
+        const lines = raw.split('\n');
+        for(let r of lines) {
+            const c = r.split('\t');
+            if(c.length >= 2) await db.ref(`master_list_total/${c[0]}`).set({ stt: c[0], name: c[1], department: c[2] || "" });
+        }
+        alert("Đã nạp " + lines.length + " học viên!"); renderReport();
     }
 
     async function saveManualGPS() {
-        const val = document.getElementById('manual-gps').value.trim();
-        const parts = val.split(/[\s,]+/);
-        if(parts.length < 2) return alert("Nhập đúng định dạng tọa độ (Ví dụ: 10.82, 106.62)");
-        await db.ref('current_session').update({ lat: parseFloat(parts[0]), lng: parseFloat(parts[1]) });
-        document.getElementById('manual-gps').value = '';
-        alert("Đã lưu tọa độ!"); renderReport();
+        const val = document.getElementById('manual-gps').value.split(/[\s,]+/);
+        if(val.length < 2) return alert("Sai tọa độ!");
+        await db.ref('current_session').update({ lat: parseFloat(val[0]), lng: parseFloat(val[1]) });
+        renderReport();
     }
 
     async function pinGPS() {
-        document.getElementById('gps-display').innerText = "⏳ Đang lấy vị trí...";
         navigator.geolocation.getCurrentPosition(async p => {
             await db.ref('current_session').update({lat:p.coords.latitude, lng:p.coords.longitude});
-            alert("Ghim tự động thành công!"); renderReport();
-        }, () => alert("Lỗi GPS! Hãy dùng tính năng dán tọa độ thủ công."), {enableHighAccuracy:false, timeout:5000});
+            renderReport();
+        }, () => alert("Lỗi lấy vị trí!"), {enableHighAccuracy:false});
     }
 
     async function init() {
         const now = new Date();
         document.getElementById('cfg-date').value = `${now.getDate().toString().padStart(2,'0')}/${(now.getMonth()+1).toString().padStart(2,'0')}/${now.getFullYear()}`;
-        db.ref('master_list').once('value', snap => {
-            const locS = document.getElementById('cfg-location');
-            const data = snap.val() || {};
-            locS.innerHTML = Object.keys(data).map(l => `<option value="${l}">${l}</option>`).join('');
-            loadClasses();
-        });
         db.ref('attendance').on('value', () => renderReport());
         setInterval(() => { document.getElementById('live-clock').innerText = new Date().toLocaleString('vi-VN'); }, 1000);
+        saveSession();
     }
 
     async function delAtt(d, s, id) { if(confirm("Xóa điểm danh?")) await db.ref(`attendance/${d}/${s}/${id}`).remove(); }
