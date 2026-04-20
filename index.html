@@ -1,9 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8"><!DOCTYPE html>
-<html lang="vi">
-<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VDC - ĐIỂM DANH AI v1.4.4</title>
@@ -248,79 +245,5 @@
     }
     initAI();
 </script>
-</body>
-</html>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VDC Safety - Face ID 4.0</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        .face-oval { border: 4px dashed #3b82f6; border-radius: 50% / 60%; }
-        .scanning { border-color: #10b981; box-shadow: 0 0 20px #10b981; }
-    </style>
-</head>
-<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
-    <header class="text-center mb-6">
-        <h1 class="text-2xl font-bold text-blue-900">VDC SAFETY - FACE ID 4.0</h1>
-        <p class="text-gray-600 italic">Hệ thống điểm danh thông minh AI</p>
-    </header>
-
-    <main class="w-full max-w-md bg-white rounded-2xl shadow-xl p-6">
-        <div class="relative w-full aspect-[3/4] bg-black rounded-xl overflow-hidden mb-4">
-            <video id="video" autoplay muted playsinline class="w-full h-full object-cover"></video>
-            <div id="scanner-frame" class="face-oval absolute inset-x-10 inset-y-16 pointer-events-none transition-all duration-300"></div>
-            <div id="status-overlay" class="absolute bottom-4 left-0 right-0 text-center text-white text-sm bg-black/50 py-1">
-                Đang khởi tạo AI...
-            </div>
-        </div>
-
-        <div id="greeting-area" class="hidden text-center mb-4">
-            <h2 class="text-xl font-semibold text-green-600">Chào anh <span id="user-name">...</span>!</h2>
-            <p class="text-sm text-gray-500">Hệ thống đã nhận diện được khuôn mặt của bạn.</p>
-        </div>
-
-        <div id="registration-form" class="hidden space-y-3 mb-4">
-            <p class="text-orange-600 font-medium text-sm">Dữ liệu mới! Vui lòng hoàn tất thông tin:</p>
-            <input type="text" id="reg-name" placeholder="Họ và tên (Gợi ý...)" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500">
-            <input type="text" id="reg-unit" placeholder="Đơn vị công tác" class="w-full p-3 border rounded-lg">
-            <div class="flex gap-2">
-                <input type="date" id="reg-dob" class="w-1/2 p-3 border rounded-lg">
-                <button onclick="submitInfo()" class="w-1/2 bg-blue-600 text-white rounded-lg font-bold">XÁC NHẬN</button>
-            </div>
-        </div>
-
-        <button id="btn-capture" class="w-full py-4 bg-blue-700 text-white rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-transform">
-            XÁC NHẬN KHUÔN MẶT
-        </button>
-    </main>
-
-    <footer class="mt-8 text-gray-400 text-xs">
-        Powered by VDC Safety - Version 4.0.0
-    </footer>
-
-    <script>
-        // Logic điều khiển Camera & AI sẽ được viết tiếp tại đây
-        const video = document.getElementById('video');
-        const frame = document.getElementById('scanner-frame');
-
-        async function startVideo() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-                video.srcObject = stream;
-                document.getElementById('status-overlay').innerText = "AI sẵn sàng - Đưa mặt vào khung";
-            } catch (err) {
-                console.error("Lỗi truy cập camera: ", err);
-            }
-        }
-
-        // Giả lập logic xử lý
-        document.getElementById('btn-capture').addEventListener('click', () => {
-            frame.classList.add('scanning');
-            // Logic: Kiểm tra Face ID trong Database -> Nếu có: Hiện Chào -> Nếu không: Hiện Form Đăng ký
-            document.getElementById('registration-form').classList.remove('hidden');
-        });
-
-        window.onload = startVideo;
-    </script>
 </body>
 </html>
