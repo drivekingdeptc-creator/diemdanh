@@ -3,99 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VDC - ĐIỂM DANH AI v1.4.4</title>
+    <title>VDC SAFETY - FACE ID AI v1.5.2</title>
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --primary: #004085; --success: #155724; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: var(--bg); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .app-container { max-width: 420px; width: 100%; background: white; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); padding: 20px; text-align: center; box-sizing: border-box; }
-        
-        /* Khung Camera */
-        #video-container { position: relative; width: 260px; height: 347px; margin: 10px auto; background: #000; border-radius: 20px; overflow: hidden; border: 4px solid #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        :root { --vdc-blue: #1e293b; --vdc-accent: #3b82f6; }
+        body { background: #f8fafc; font-family: 'Inter', system-ui, sans-serif; }
+        .app-container { max-width: 450px; width: 100%; background: white; border-radius: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.08); overflow: hidden; }
+        #video-container { position: relative; width: 280px; height: 373px; margin: 15px auto; background: #000; border-radius: 30px; overflow: hidden; border: 6px solid #fff; box-shadow: 0 8px 25px rgba(0,0,0,0.15); }
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         canvas { position: absolute; top: 0; left: 0; transform: scaleX(-1); }
-        .face-guide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.7) 80%); pointer-events: none; }
-        .face-guide::after { content: ''; position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%); width: 65%; height: 70%; border: 2px dashed rgba(255,255,255,0.6); border-radius: 50% 50% 45% 45%; }
-
-        .btn { width: 100%; padding: 16px; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; text-transform: uppercase; }
-        #btnCapture { background: var(--primary); color: white; }
-        #btnCapture:disabled { background: #ccc; }
-
-        input, select { width: 100%; padding: 12px; margin-bottom: 8px; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 15px; }
-        
-        /* Form xác nhận thông tin */
-        .form-verify { display: none; text-align: left; background: #fff3cd; padding: 15px; border-radius: 15px; margin-top: 15px; border: 1px solid #ffeeba; }
-        .input-group label { display: block; font-size: 11px; font-weight: bold; color: #555; margin-bottom: 4px; text-transform: uppercase; }
-        
-        /* Thumbnail ảnh thẻ trong form */
-        #preview-photo { width: 120px; height: 160px; object-fit: cover; border-radius: 8px; border: 3px solid #fff; display: block; margin: 0 auto 15px auto; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-
-        /* Kết quả */
-        .result-card { display: none; background: #fff; border-radius: 20px; padding: 15px; animation: popIn 0.4s ease; }
-        #res-photo { width: 165px; height: 220px; object-fit: cover; border-radius: 12px; border: 4px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .info-row { border-bottom: 1px dashed #ddd; padding: 8px 0; font-size: 15px; color: #333; }
-        .info-row strong { color: var(--primary); }
-        
-        @keyframes popIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-        footer { margin-top: 20px; font-size: 10px; color: #888; text-align: center; }
+        .scan-line { position: absolute; width: 100%; height: 2px; background: linear-gradient(to right, transparent, #3b82f6, transparent); box-shadow: 0 0 15px #3b82f6; top: 0; animation: scan 2.5s infinite linear; z-index: 10; }
+        @keyframes scan { 0% { top: 10%; } 50% { top: 90%; } 100% { top: 10%; } }
+        .face-guide { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(ellipse at center, transparent 40%, rgba(30,41,59,0.7) 85%); pointer-events: none; }
+        .btn-vdc { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; transition: 0.3s; }
+        .btn-vdc:disabled { background: #cbd5e1; color: #94a3b8; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
+<body class="p-4 flex flex-col items-center justify-center min-h-screen">
 
 <div class="app-container">
-    <div id="session-info" style="font-size: 11px; background: #333; color: white; padding: 8px; border-radius: 10px; margin-bottom: 10px; line-height: 1.4;">Đang kết nối phiên học...</div>
+    <div id="session-info" class="bg-slate-900 text-white p-4 text-[10px] tracking-wider text-center uppercase font-bold border-b border-slate-700 italic">Đang tải dữ liệu...</div>
 
-    <h3 style="margin:5px 0; color: var(--primary);">HEPC SAFETY AI</h3>
-    <p id="loading-msg" style="font-size:12px; color:#dc3545; font-weight:bold; margin-bottom: 10px;">⌛ ĐANG TẢI AI...</p>
-
-    <div id="scanner-section">
-        <div id="video-container">
-            <video id="video" autoplay muted playsinline></video>
-            <canvas id="overlay"></canvas>
-            <div class="face-guide"></div>
+    <div class="p-6 text-center">
+        <div class="flex items-center justify-center gap-2 mb-2">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-sm">V</div>
+            <h3 class="text-xl font-black text-slate-800 tracking-tighter uppercase">VDC Safety AI</h3>
         </div>
-        <p id="scan-status" style="font-size:14px; font-weight:bold; color: #555;">Đang chuẩn bị quét...</p>
-        <button class="btn" id="btnCapture" onclick="checkFace()" disabled>XÁC NHẬN KHUÔN MẶT</button>
-    </div>
+        <p id="loading-msg" class="text-xs text-red-500 font-bold animate-pulse mb-4"><i class="fas fa-spinner fa-spin mr-1"></i> ĐANG TẢI MÔ HÌNH AI...</p>
 
-    <div id="search-section" style="display:none; margin-top:15px; border-top: 1px dashed #ccc; padding-top: 15px;">
-        <p style="color:#d9534f; font-weight:bold;">⚠️ CHƯA CÓ DỮ LIỆU MẶT</p>
-        <input type="text" id="inputName" placeholder="Nhập Họ và Tên của bạn">
-        <button class="btn" style="background:#495057; color:white;" onclick="searchStudent()">TÌM THÔNG TIN</button>
-    </div>
-
-    <div id="verify-section" class="form-verify">
-        <img id="preview-photo" src="">
-        
-        <div class="input-group"><label>SỐ THỨ TỰ (STT)</label><input type="text" id="c1" disabled style="background:#eee;"></div>
-        <div class="input-group"><label>HỌ VÀ TÊN</label><input type="text" id="c2" disabled style="background:#eee;"></div>
-        
-        <div class="input-group"><label>GIỚI TÍNH *</label><select id="c3"><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></div>
-        <div class="input-group"><label>NGÀY SINH *</label><input type="date" id="c4"></div>
-        <div class="input-group"><label>BẬC AN TOÀN *</label><select id="c5"><option value="5/5">5/5</option><option value="4/5">4/5</option><option value="3/5">3/5</option><option value="2/5">2/5</option><option value="1/5">1/5</option></select></div>
-        <div class="input-group"><label>CHỨC DANH *</label><input type="text" id="c6"></div>
-        <div class="input-group"><label>ĐƠN VỊ CÔNG TÁC *</label><input type="text" id="c7"></div>
-        
-        <button class="btn" style="background:var(--success); color:white;" onclick="saveFinal()">XÁC NHẬN THÔNG TIN</button>
-        <button class="btn" style="background:#adb5bd; color:white; font-size:12px;" onclick="location.reload()">QUAY LẠI</button>
-    </div>
-
-    <div id="result-screen" class="result-card">
-        <img id="res-photo" src="">
-        <div style="text-align: left; margin-bottom: 15px;">
-            <div class="info-row">STT: <strong id="res-stt"></strong></div>
-            <div class="info-row">Họ và Tên: <strong id="res-name"></strong></div>
-            <div class="info-row">Đơn vị: <strong id="res-unit"></strong></div>
-            <div class="info-row">Chức danh: <strong id="res-pos"></strong></div>
+        <div id="scanner-section">
+            <div id="video-container">
+                <div class="scan-line"></div>
+                <video id="video" autoplay muted playsinline></video>
+                <canvas id="overlay"></canvas>
+                <div class="face-guide"></div>
+            </div>
+            <p id="scan-status" class="text-sm font-bold text-slate-400 mb-4 tracking-wide uppercase">Vui lòng đưa mặt vào khung</p>
+            <button class="btn-vdc w-full py-5 rounded-2xl font-black text-lg shadow-xl" id="btnCapture" onclick="checkFace()" disabled>XÁC NHẬN KHUÔN MẶT</button>
         </div>
-        <div id="res-time" style="background:#d4edda; color:#155724; padding:10px; border-radius:10px; font-weight:bold; font-size:13px; margin-top:10px;"></div>
-        <button class="btn" style="background:#eee; color:#333; margin-top: 15px;" onclick="location.reload()">TIẾP TỤC QUÉT</button>
+
+        <div id="search-section" class="hidden mt-4 pt-6 border-t border-dashed border-slate-200 text-left fade-in">
+            <div class="bg-orange-50 border-l-4 border-orange-500 p-3 mb-4 text-[11px] text-orange-600">Chưa có dữ liệu khuôn mặt. Vui lòng nhập họ tên để định danh lần đầu.</div>
+            <input type="text" id="inputName" class="w-full p-4 bg-slate-50 border rounded-2xl mb-3 outline-none font-bold text-slate-700" placeholder="NHẬP HỌ TÊN CỦA BẠN...">
+            <button class="w-full py-4 bg-slate-700 text-white rounded-2xl font-bold" onclick="searchStudent()">TÌM THÔNG TIN</button>
+        </div>
+
+        <div id="verify-section" class="hidden mt-4 text-left bg-blue-50/50 p-5 rounded-3xl border border-blue-100 fade-in">
+            <img id="preview-photo" class="w-24 h-32 object-cover rounded-xl border-4 border-white shadow-md mx-auto mb-6 bg-slate-200">
+            <div class="space-y-4">
+                <div class="flex gap-3">
+                    <div class="flex-1 text-[10px] font-bold text-slate-400 uppercase">STT<input type="text" id="c1" disabled class="w-full p-2 bg-slate-100 border-none rounded-lg font-bold"></div>
+                    <div class="flex-[3] text-[10px] font-bold text-slate-400 uppercase">Học viên<input type="text" id="c2" disabled class="w-full p-2 bg-slate-100 border-none rounded-lg font-bold"></div>
+                </div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase">Giới tính</label><select id="c3" class="w-full p-3 bg-white border rounded-xl outline-none"><option value="Nam">Nam</option><option value="Nữ">Nữ</option></select></div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase">Ngày sinh (dd/mm/yyyy)</label><input type="date" id="c4" class="w-full p-3 bg-white border rounded-xl outline-none"></div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase">Bậc An Toàn</label><select id="c5" class="w-full p-3 bg-white border rounded-xl outline-none"><option value="5/5">5/5</option><option value="4/5">4/5</option><option value="3/5">3/5</option><option value="2/5">2/5</option><option value="1/5">1/5</option></select></div>
+                <div><label class="text-[10px] font-bold text-slate-400 uppercase">Chức danh / Đơn vị</label><div class="flex gap-2"><input type="text" id="c6" placeholder="Chức danh" class="w-1/2 p-3 bg-white border rounded-xl"><input type="text" id="c7" placeholder="Đơn vị" class="w-1/2 p-3 bg-white border rounded-xl"></div></div>
+            </div>
+            <button class="w-full mt-6 py-5 bg-green-600 text-white rounded-2xl font-black text-lg shadow-lg uppercase" onclick="saveFinal()">XÁC NHẬN ĐĂNG KÝ</button>
+        </div>
+
+        <div id="result-screen" class="hidden mt-4 fade-in">
+            <div class="bg-white p-6 rounded-[40px] shadow-2xl border border-green-50 shadow-green-100 relative text-center">
+                <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl shadow-lg shadow-green-100"><i class="fas fa-check"></i></div>
+                <img id="res-photo" class="w-32 h-44 object-cover rounded-2xl border-4 border-white shadow-md mx-auto mb-4 bg-slate-100">
+                <h2 class="text-xl font-black text-slate-800 uppercase tracking-tight" id="res-name"></h2>
+                <p class="text-sm font-bold text-green-600 mt-2 italic" id="res-time"></p>
+                <div class="mt-4 p-4 bg-slate-50 rounded-2xl text-left text-[13px] space-y-2 border border-slate-100">
+                    <p class="flex justify-between border-b border-slate-200 pb-2"><span>Số thứ tự:</span> <b id="res-stt" class="text-slate-800"></b></p>
+                    <p class="flex justify-between pt-1"><span>Đơn vị:</span> <b id="res-unit" class="text-slate-800 text-right truncate ml-4"></b></p>
+                </div>
+                <button class="w-full mt-6 py-4 bg-slate-900 text-white rounded-2xl font-bold uppercase text-xs" onclick="location.reload()">TIẾP TỤC QUÉT MỚI</button>
+            </div>
+        </div>
     </div>
 </div>
 
-<footer>Phát triển bởi <strong>Mr. An Toàn (Trần Công Đẹp)</strong> | Version 1.4.4</footer>
+<footer class="mt-8 text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold">Hệ thống VDC Safety v1.5.2 | <span class="text-slate-800">Mr. An Toàn</span></footer>
 
 <script>
     const firebaseConfig = {
@@ -121,15 +111,13 @@
                 faceapi.nets.faceRecognitionNet.loadFromUri(URL)
             ]);
             document.getElementById('loading-msg').style.display = 'none';
-            
             db.ref('current_session').on('value', snap => {
                 session = snap.val();
-                if(session) document.getElementById('session-info').innerHTML = `ĐỊA ĐIỂM: ${session.location}<br>LỚP: ${session.class} | BUỔI: ${session.session}`;
+                if(session) document.getElementById('session-info').innerHTML = `<i class="fas fa-university mr-1"></i> ${session.class}`;
             });
-
             startCamera();
             loadFaceDB();
-        } catch (e) { document.getElementById('loading-msg').innerText = "❌ LỖI TẢI AI!"; }
+        } catch (e) { document.getElementById('loading-msg').innerHTML = "❌ LỖI TẢI MÔ HÌNH AI!"; }
     }
 
     async function startCamera() {
@@ -139,16 +127,16 @@
         isDetecting = true;
         video.onplay = () => {
             const canvas = document.getElementById('overlay');
-            faceapi.matchDimensions(canvas, { width: 260, height: 347 });
+            faceapi.matchDimensions(canvas, { width: 280, height: 373 });
             setInterval(async () => {
                 if(!isDetecting) return;
                 const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
                 if(det) {
-                    faceapi.draw.drawDetections(canvas, faceapi.resizeResults(det, { width: 260, height: 347 }));
+                    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                    faceapi.draw.drawDetections(canvas, faceapi.resizeResults(det, { width: 280, height: 373 }));
                     lastDescriptor = det.descriptor;
                     document.getElementById('btnCapture').disabled = false;
-                    document.getElementById('scan-status').innerText = "✅ SẴN SÀNG";
+                    document.getElementById('scan-status').innerHTML = "✅ SẴN SÀNG NHẬN DIỆN";
                 }
             }, 500);
         };
@@ -162,60 +150,54 @@
     }
 
     async function checkFace() {
-        // Chụp ảnh trước khi kiểm tra
         const canvas = document.createElement('canvas');
         canvas.width = 450; canvas.height = 600;
         const v = document.getElementById('video');
-        const vW = v.videoWidth, vH = v.videoHeight;
-        const sW = vH * 0.75;
-        canvas.getContext('2d').drawImage(v, (vW-sW)/2, vH*0.05, sW, vH*0.95, 0, 0, 450, 600);
+        canvas.getContext('2d').drawImage(v, (v.videoWidth-(v.videoHeight*0.75))/2, v.videoHeight*0.05, v.videoHeight*0.75, v.videoHeight*0.95, 0, 0, 450, 600);
         capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
 
         if(faceMatcher && lastDescriptor) {
             const match = faceMatcher.findBestMatch(lastDescriptor);
             if(match.label !== 'unknown') {
-                const snap = await db.ref(`master_list/${session.location}/${session.class}/${match.label}`).once('value');
+                const snap = await db.ref(`classes/${session.source}/students/${match.label}`).once('value');
                 if(snap.val()) {
                     currentStudent = snap.val();
-                    currentStudent.photo = capturedPhoto; // Cập nhật ảnh mới nhất
+                    currentStudent.photo = capturedPhoto; 
                     return saveAttendance(currentStudent);
                 }
             }
         }
         document.getElementById('scanner-section').style.display = 'none';
-        document.getElementById('search-section').style.display = 'block';
+        document.getElementById('search-section').classList.remove('hidden');
     }
 
     async function searchStudent() {
         const name = document.getElementById('inputName').value.trim().toLowerCase();
-        const snap = await db.ref(`master_list/${session.location}/${session.class}`).once('value');
+        const snap = await db.ref(`classes/${session.source}/students`).once('value');
         const list = snap.val() || {};
         const found = Object.values(list).find(u => u.name && u.name.toLowerCase() === name);
-        
         if(found) {
             currentStudent = found;
             document.getElementById('search-section').style.display = 'none';
-            document.getElementById('verify-section').style.display = 'block';
-            
-            // Hiển thị ảnh thẻ và thông tin
+            document.getElementById('verify-section').classList.remove('hidden');
             document.getElementById('preview-photo').src = capturedPhoto;
             document.getElementById('c1').value = found.stt;
             document.getElementById('c2').value = found.name;
-            document.getElementById('c3').value = found.gender || "Nam";
-            document.getElementById('c6').value = found.position || "";
-            document.getElementById('c7').value = found.department || "";
         } else { alert("Không tìm thấy tên!"); }
     }
 
     async function saveFinal() {
         const v4 = document.getElementById('c4').value;
-        if(!v4) return alert("Vui lòng chọn Ngày sinh!");
+        if(!v4) return alert("Vui lòng nhập Ngày sinh!");
         
-        const d = new Date(v4);
+        // CHUYỂN ĐỔI NGÀY SANG dd/MM/yyyy
+        const [y, m, d] = v4.split('-');
+        const formattedDOB = `${d}/${m}/${y}`;
+
         const data = {
             ...currentStudent,
             gender: document.getElementById('c3').value,
-            dob: `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()}`,
+            dob: formattedDOB,
             rank: document.getElementById('c5').value,
             position: document.getElementById('c6').value.trim(),
             department: document.getElementById('c7').value.trim(),
@@ -228,20 +210,17 @@
     }
 
     async function saveAttendance(st) {
-        const timeStr = new Date().getHours().toString().padStart(2,'0') + ":" + new Date().getMinutes().toString().padStart(2,'0') + " ngày " + new Date().toLocaleDateString('vi-VN');
+        const timeStr = new Date().toLocaleTimeString('vi-VN') + " ngày " + new Date().toLocaleDateString('vi-VN');
         await db.ref(`attendance/${session.date}/${session.session}/${st.stt}`).set({ name: st.name, time: timeStr, photo: st.photo || "" });
-        
         isDetecting = false;
         document.getElementById('scanner-section').style.display = 'none';
-        document.getElementById('verify-section').style.display = 'none';
-        document.getElementById('result-screen').style.display = 'block';
-        
+        document.getElementById('verify-section').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
         document.getElementById('res-photo').src = st.photo || "";
         document.getElementById('res-stt').innerText = st.stt;
         document.getElementById('res-name').innerText = st.name.toUpperCase();
-        document.getElementById('res-unit').innerText = st.department || "";
-        document.getElementById('res-pos').innerText = st.position || "";
-        document.getElementById('res-time').innerText = "ĐIỂM DANH THÀNH CÔNG LÚC:\n" + timeStr;
+        document.getElementById('res-unit').innerText = st.department || st.company || "";
+        document.getElementById('res-time').innerText = "ĐIỂM DANH THÀNH CÔNG LÚC: " + timeStr;
     }
     initAI();
 </script>
