@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VDC SAFETY - AI FACE ID v1.6.1</title>
+    <title>VDC SAFETY - AI FACE ID v1.6.2</title>
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
@@ -29,14 +29,14 @@
 <body class="p-4 flex flex-col items-center justify-center min-h-screen">
 
 <div class="app-container">
-    <div id="session-info" class="bg-slate-900 text-white p-4 text-[10px] tracking-wider text-center uppercase font-bold border-b border-slate-700 italic text-blue-400">Đang đồng bộ...</div>
+    <div id="session-info" class="bg-slate-900 text-white p-4 text-[10px] tracking-wider text-center uppercase font-bold border-b border-slate-700 italic text-blue-400">Đang đồng bộ AI...</div>
 
     <div class="p-6 text-center">
         <div class="flex items-center justify-center gap-2 mb-2">
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-sm">V</div>
             <h1 class="text-xl font-black text-slate-800 tracking-tighter uppercase">VDC Safety AI</h1>
         </div>
-        <p id="loading-msg" class="text-xs text-red-500 font-bold animate-pulse mb-4">⌛ ĐANG KHỞI CHẠY BỘ LỌC AI SSD...</p>
+        <p id="loading-msg" class="text-xs text-red-500 font-bold animate-pulse mb-4">⌛ ĐANG KHỞI CHẠY BỘ LỌC BẢO MẬT...</p>
 
         <div id="scanner-section">
             <div id="video-container">
@@ -51,14 +51,14 @@
 
         <div id="search-section" class="hidden mt-4 pt-6 border-t border-dashed border-slate-200 text-left fade-in">
             <div class="bg-orange-50 border-l-4 border-orange-500 p-3 mb-4 text-[11px] text-orange-600 font-bold">CHƯA NHẬN DIỆN ĐƯỢC MẶT</div>
-            <p class="text-[10px] text-slate-500 mb-2 italic">Mẹo: Anh/Chị có thể nhập họ tên <b>không cần dấu</b> cho nhanh.</p>
-            <input type="text" id="inputName" class="w-full p-4 bg-slate-50 border rounded-2xl mb-3 outline-none font-bold text-slate-700" placeholder="VÍ DỤ: TRAN CONG DEP">
+            <p class="text-[10px] text-slate-500 mb-2 italic text-center">Anh/Chị nhập họ tên <b>không dấu</b> để tìm hồ sơ.</p>
+            <input type="text" id="inputName" class="w-full p-4 bg-slate-50 border rounded-2xl mb-3 outline-none font-bold text-slate-700 uppercase" placeholder="VÍ DỤ: NGUYEN VAN A">
             <button class="w-full py-4 bg-slate-700 text-white rounded-2xl font-bold shadow-lg" onclick="searchStudent()">TÌM HỒ SƠ</button>
         </div>
 
-        <div id="verify-section" class="hidden mt-4 text-left bg-blue-50/50 p-5 rounded-3xl border border-blue-100 fade-in text-[10px]">
+        <div id="verify-section" class="hidden mt-4 text-left bg-blue-50/50 p-5 rounded-3xl border border-blue-100 fade-in">
             <img id="preview-photo" class="w-24 h-32 object-cover rounded-xl border-4 border-white shadow-md mx-auto mb-6 bg-slate-200">
-            <div class="space-y-4 font-bold text-slate-400 uppercase">
+            <div class="space-y-4 text-[10px] font-bold text-slate-400 uppercase">
                 <div class="flex gap-3">
                     <div class="flex-1">STT<input type="text" id="c1" disabled class="w-full p-2 bg-slate-100 rounded-lg font-bold text-slate-800"></div>
                     <div class="flex-[3]">Học viên<input type="text" id="c2" disabled class="w-full p-2 bg-slate-100 rounded-lg font-bold text-slate-800 uppercase"></div>
@@ -66,7 +66,7 @@
                 <div>Ngày sinh<input type="text" id="c4" class="w-full p-3 bg-white border rounded-xl text-slate-700 font-bold"></div>
                 <div>Đơn vị<input type="text" id="c7" class="w-full p-3 bg-white border rounded-xl text-slate-700 font-bold"></div>
             </div>
-            <button class="w-full mt-6 py-5 bg-green-600 text-white rounded-2xl font-black text-lg uppercase shadow-lg shadow-green-100" onclick="saveFinal()">XÁC NHẬN ĐĂNG KÝ MẶT</button>
+            <button class="w-full mt-6 py-5 bg-green-600 text-white rounded-2xl font-black text-lg uppercase shadow-lg" onclick="saveFinal()">XÁC NHẬN ĐĂNG KÝ MẶT</button>
         </div>
 
         <div id="result-screen" class="hidden mt-4 fade-in">
@@ -81,7 +81,7 @@
     </div>
 </div>
 
-<footer class="mt-8 text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold">VDC Safety v1.6.1 | <span class="text-slate-800">Mr. An Toàn</span></footer>
+<footer class="mt-8 text-[10px] text-slate-400 uppercase tracking-[0.2em] font-bold">VDC Safety v1.6.2 | <span class="text-slate-800">Mr. An Toàn</span></footer>
 
 <script>
     const firebaseConfig = {
@@ -98,11 +98,8 @@
 
     let lastDescriptor, isDetecting, faceMatcher, session, currentStudent, capturedPhoto;
 
-    // HÀM LOẠI BỎ DẤU TIẾNG VIỆT
     function removeAccents(str) {
-        return str.normalize('NFD')
-                  .replace(/[\u0300-\u036f]/g, '')
-                  .replace(/đ/g, 'd').replace(/Đ/g, 'D');
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
     }
 
     async function initAI() {
@@ -185,20 +182,25 @@
 
     async function searchStudent() {
         const inputName = document.getElementById('inputName').value.trim().toLowerCase();
-        const cleanInput = removeAccents(inputName); // Chuyển sang không dấu
+        const cleanInput = removeAccents(inputName);
 
-        const snap = await db.ref(`classes/${session.source}/students`).once('value');
-        const list = snap.val() || {};
+        const snapMaster = await db.ref(`classes/${session.source}/students`).once('value');
+        const list = snapMaster.val() || {};
         
-        // Tìm kiếm linh hoạt: khớp cả tên có dấu và không dấu
         const found = Object.values(list).find(u => {
             if (!u.name) return false;
             const dbName = u.name.toLowerCase();
-            const cleanDbName = removeAccents(dbName);
-            return dbName === inputName || cleanDbName === cleanInput;
+            return dbName === inputName || removeAccents(dbName) === cleanInput;
         });
 
         if(found) {
+            // KIỂM TRA TRÙNG LẶP: Đã có Face ID hay chưa
+            const snapFace = await db.ref(`students/${found.stt}`).once('value');
+            if(snapFace.exists()) {
+                alert("⚠️ TÊN NÀY ĐÃ ĐƯỢC ĐĂNG KÝ!\nVui lòng chọn đúng tên của mình. Nếu bị nhầm, hãy báo giảng viên xóa đăng ký cũ.");
+                return;
+            }
+
             currentStudent = found;
             document.getElementById('search-section').style.display = 'none';
             document.getElementById('verify-section').classList.remove('hidden');
@@ -207,7 +209,7 @@
             document.getElementById('c2').value = found.name;
             document.getElementById('c4').value = found.dob || "";
             document.getElementById('c7').value = found.department || found.company || "";
-        } else { alert("Không tìm thấy tên học viên!"); }
+        } else { alert("Không tìm thấy tên trong danh sách lớp!"); }
     }
 
     async function saveFinal() {
@@ -225,7 +227,7 @@
         document.getElementById('result-screen').classList.remove('hidden');
         document.getElementById('res-photo').src = st.photo || "";
         document.getElementById('res-name').innerText = st.name.toUpperCase();
-        document.getElementById('res-time').innerText = "XÁC NHẬN: " + timeStr;
+        document.getElementById('res-time').innerText = "ĐIỂM DANH THÀNH CÔNG: " + timeStr;
     }
     initAI();
 </script>
