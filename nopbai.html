@@ -3,85 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VDC SAFETY - NỘP BÀI THI AI</title>
-    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+    <title>VDC SAFETY - NỘP BÀI NHANH</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background: #f1f5f9; font-family: 'Inter', sans-serif; }
-        .app-card { max-width: 450px; margin: auto; background: white; border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); overflow: hidden; }
-        #video-preview { width: 100%; height: 250px; object-fit: cover; background: #000; border-radius: 20px; }
-        .btn-primary { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; }
+        body { background: #f8fafc; font-family: 'Inter', sans-serif; }
+        .app-card { max-width: 450px; margin: auto; background: white; border-radius: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.05); overflow: hidden; }
         .step-inactive { display: none; }
+        .input-vdc { background: #f1f5f9; border: 2px solid transparent; transition: 0.3s; }
+        .input-vdc:focus { border-color: #3b82f6; background: white; outline: none; }
+        .btn-primary { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; }
         .pulse-blue { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); } 70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center min-h-screen">
 
 <div class="app-card w-full">
-    <div class="bg-slate-900 p-5 text-center">
+    <div class="bg-slate-900 p-6 text-center">
         <div class="flex justify-center items-center gap-2 mb-1">
-            <div class="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-xs">V</div>
-            <h1 class="text-white font-black text-lg uppercase tracking-tighter">VDC Safety AI</h1>
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-sm">V</div>
+            <h1 class="text-white font-black text-xl uppercase tracking-tighter">VDC Safety</h1>
         </div>
-        <p class="text-blue-400 text-[9px] font-bold uppercase tracking-widest italic">Hệ thống nộp bài thi v3.1 Lite</p>
+        <p class="text-blue-400 text-[10px] font-black uppercase tracking-[0.2em]">Hệ thống nộp bài v3.2</p>
     </div>
 
-    <div class="p-6">
+    <div class="p-8">
         <div id="step-1" class="text-center">
-            <h2 class="text-sm font-black text-slate-800 uppercase mb-4">Bước 1: Xác nhận danh tính</h2>
-            <div class="relative mb-4">
-                <video id="video" autoplay muted playsinline class="rounded-2xl border-4 border-white shadow-lg"></video>
-                <div id="face-status" class="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1 bg-black/50 text-white text-[10px] rounded-full backdrop-blur-md">
-                    🔍 ĐANG QUÉT KHUÔN MẶT...
-                </div>
+            <i class="fas fa-user-circle text-5xl text-slate-200 mb-4"></i>
+            <h2 class="text-sm font-black text-slate-800 uppercase mb-6">Nhập Số Thứ Tự (STT)</h2>
+            
+            <input type="number" id="input-stt" placeholder="VÍ DỤ: 15" 
+                   class="w-full p-5 input-vdc rounded-2xl text-center text-3xl font-black text-slate-800 mb-4"
+                   oninput="lookupStudent(this.value)">
+
+            <div id="student-info" class="hidden bg-blue-50 p-5 rounded-2xl border border-blue-100 mb-6 animate-fadeIn">
+                <p class="text-[10px] text-blue-600 font-black uppercase mb-1">Xác nhận có phải anh/chị:</p>
+                <p id="student-name" class="text-xl font-black text-slate-800 uppercase leading-tight"></p>
+                <p id="student-detail" class="text-[10px] text-slate-400 font-bold mt-1 uppercase"></p>
             </div>
-            <div id="user-info" class="hidden bg-green-50 p-4 rounded-2xl border border-green-100 mb-4 animate-bounce">
-                <p class="text-[10px] text-green-600 font-black uppercase">Chào anh/chị:</p>
-                <p id="student-name" class="text-lg font-black text-slate-800 uppercase leading-none"></p>
-            </div>
-            <button id="btn-next-1" disabled onclick="goToStep2()" class="w-full py-4 btn-primary rounded-2xl font-black uppercase shadow-xl opacity-50">Tiếp theo: Chụp bài thi</button>
+
+            <button id="btn-next-1" disabled onclick="goToStep2()" 
+                    class="w-full py-5 btn-primary rounded-2xl font-black uppercase shadow-xl opacity-30 transition-all">
+                Đúng là tôi, tiếp tục
+            </button>
         </div>
 
         <div id="step-2" class="step-inactive text-center">
-            <h2 class="text-sm font-black text-slate-800 uppercase mb-4">Bước 2: Chụp ảnh phiếu trả lời</h2>
-            <p class="text-[10px] text-slate-400 font-bold mb-4 uppercase">Vuông góc, rõ nét và đủ ánh sáng</p>
+            <h2 class="text-sm font-black text-slate-800 uppercase mb-4">Chụp ảnh phiếu bài làm</h2>
+            <p class="text-[10px] text-slate-400 font-bold mb-6 uppercase tracking-wider">Lưu ý: Chụp rõ nét, không bị lóa sáng</p>
             
-            <div id="exam-capture-zone" class="relative rounded-2xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-300 mb-6">
+            <div id="preview-container" onclick="document.getElementById('file-input').click()" 
+                 class="relative rounded-3xl overflow-hidden bg-slate-50 border-2 border-dashed border-slate-200 mb-8 cursor-pointer min-h-[250px] flex items-center justify-center">
                 <img id="exam-preview" class="hidden w-full h-auto">
-                <div id="camera-icon" class="py-20 text-slate-300">
-                    <i class="fas fa-camera text-5xl"></i>
+                <div id="placeholder-icon" class="text-slate-300 flex flex-col items-center">
+                    <i class="fas fa-camera text-6xl mb-3"></i>
+                    <span class="text-[10px] font-black uppercase">Bấm để mở camera</span>
                 </div>
             </div>
 
-            <input type="file" id="file-input" accept="image/*" capture="environment" class="hidden" onchange="previewExam(this)">
+            <input type="file" id="file-input" accept="image/*" capture="environment" class="hidden" onchange="processPhoto(this)">
             
-            <div class="flex gap-3">
-                <button onclick="document.getElementById('file-input').click()" class="flex-1 py-4 bg-slate-100 text-slate-700 rounded-2xl font-black uppercase text-xs border">
-                    <i class="fas fa-camera mr-2"></i> Chụp ảnh
-                </button>
-                <button id="btn-submit" disabled onclick="finalSubmit()" class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black uppercase shadow-xl opacity-50 pulse-blue">
-                    Nộp bài thi ngay
-                </button>
-            </div>
+            <button id="btn-submit" disabled onclick="finalSubmit()" 
+                    class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase shadow-2xl opacity-30 pulse-blue">
+                Gửi bài thi ngay
+            </button>
+            <button onclick="location.reload()" class="mt-6 text-slate-400 font-bold text-[10px] uppercase underline">Quay lại nhập STT</button>
         </div>
 
         <div id="step-3" class="step-inactive text-center py-10">
-            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl shadow-2xl">
+            <div class="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-4xl shadow-2xl animate-bounce">
                 <i class="fas fa-check"></i>
             </div>
-            <h2 class="text-2xl font-black text-slate-800 uppercase mb-2">Đã gửi bài thi!</h2>
-            <p class="text-slate-500 text-xs font-bold px-6 leading-relaxed uppercase">Mời anh/chị ngồi tại chỗ. <br> Chờ giảng viên gọi tên lên ký tên xác nhận.</p>
-            <button onclick="location.reload()" class="mt-8 text-blue-600 font-black uppercase text-[10px] tracking-widest">Nộp bài khác</button>
+            <h2 class="text-2xl font-black text-slate-800 uppercase mb-2">Thành công!</h2>
+            <p class="text-slate-500 text-xs font-bold px-6 leading-relaxed uppercase">Bài thi của anh/chị đã được gửi.<br>Mời lên bàn giảng viên để ký tên.</p>
+            <button onclick="location.reload()" class="mt-10 py-3 px-8 bg-slate-100 rounded-xl text-slate-600 font-black uppercase text-[10px]">Nộp bài khác</button>
         </div>
     </div>
 </div>
 
 <script>
-    // CẤU HÌNH FIREBASE (Dùng lại config cũ của anh)
     const firebaseConfig = {
         apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
         authDomain: "hepc-ed95d.firebaseapp.com",
@@ -94,100 +97,102 @@
     const db = firebase.database();
 
     let currentStudent = null;
-    let examBase64 = null;
+    let compressedPhoto = null;
 
-    // 1. KHỞI CHẠY FACE ID
-    async function initFaceID() {
-        const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-        await Promise.all([
-            faceapi.nets.ssdMobilenetv1.loadFromUri(URL),
-            faceapi.nets.faceRecognitionNet.loadFromUri(URL)
-        ]);
-        startCamera();
-    }
-
-    async function startCamera() {
-        const video = document.getElementById('video');
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
-        video.srcObject = stream;
+    // 1. TÌM KIẾM HỌC VIÊN THEO STT
+    async function lookupStudent(stt) {
+        if (!stt) { hideStudent(); return; }
         
-        // Mock nhận diện: Trong thực tế sẽ dùng hàm matchFace như file cũ
-        // Ở đây giả định sau 3s sẽ tìm thấy học viên để anh test flow
-        setTimeout(() => {
-            currentStudent = { stt: "51", name: "Lê Nguyễn Huy Hùng", dob: "09011980" };
-            document.getElementById('face-status').innerHTML = "✅ NHẬN DIỆN THÀNH CÔNG";
-            document.getElementById('user-info').classList.remove('hidden');
-            document.getElementById('student-name').innerText = currentStudent.name;
+        // Lấy thông tin phiên làm việc hiện tại
+        const sessionSnap = await db.ref('current_session').once('value');
+        const session = sessionSnap.val();
+        if (!session) return;
+
+        // Truy vấn học viên từ đúng lớp đang mở
+        const studentSnap = await db.ref(`classes/${session.source}/students/${stt}`).once('value');
+        const student = studentSnap.val();
+
+        if (student) {
+            currentStudent = student;
+            document.getElementById('student-info').classList.remove('hidden');
+            document.getElementById('student-name').innerText = student.name;
+            document.getElementById('student-detail').innerText = `${student.dob} | ${student.department || student.company || ''}`;
             document.getElementById('btn-next-1').disabled = false;
-            document.getElementById('btn-next-1').classList.remove('opacity-50');
-        }, 3000);
+            document.getElementById('btn-next-1').classList.remove('opacity-30');
+        } else {
+            hideStudent();
+        }
     }
 
-    // 2. XỬ LÝ CHỤP ẢNH BÀI THI
+    function hideStudent() {
+        document.getElementById('student-info').classList.add('hidden');
+        document.getElementById('btn-next-1').disabled = true;
+        document.getElementById('btn-next-1').classList.add('opacity-30');
+        currentStudent = null;
+    }
+
+    // 2. CHUYỂN BƯỚC CHỤP ẢNH
     function goToStep2() {
         document.getElementById('step-1').classList.add('step-inactive');
         document.getElementById('step-2').classList.remove('step-inactive');
     }
 
-    function previewExam(input) {
+    // 3. NÉN ẢNH VÀ PREVIEW
+    function processPhoto(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                // Nén ảnh bằng Canvas
                 const img = new Image();
                 img.src = e.target.result;
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    const MAX_WIDTH = 1000; // Nén về chiều ngang 1000px
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > MAX_WIDTH) {
-                        height *= MAX_WIDTH / width;
-                        width = MAX_WIDTH;
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
+                    // Nén về chiều ngang 1200px để Gemini đọc tốt nhất
+                    const scale = 1200 / img.width;
+                    canvas.width = 1200;
+                    canvas.height = img.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     
-                    examBase64 = canvas.toDataURL('image/jpeg', 0.7); // Nén chất lượng 70%
-                    document.getElementById('exam-preview').src = examBase64;
+                    compressedPhoto = canvas.toDataURL('image/jpeg', 0.8);
+                    document.getElementById('exam-preview').src = compressedPhoto;
                     document.getElementById('exam-preview').classList.remove('hidden');
-                    document.getElementById('camera-icon').classList.add('hidden');
+                    document.getElementById('placeholder-icon').classList.add('hidden');
                     document.getElementById('btn-submit').disabled = false;
-                    document.getElementById('btn-submit').classList.remove('opacity-50');
+                    document.getElementById('btn-submit').classList.remove('opacity-30');
                 }
             }
             reader.readAsDataURL(input.files[0]);
         }
     }
 
-    // 3. NỘP BÀI LÊN FIREBASE (HÀNG ĐỢI)
+    // 4. GỬI LÊN FIREBASE (QUEUE SYSTEM)
     async function finalSubmit() {
         const btn = document.getElementById('btn-submit');
         btn.innerText = "ĐANG GỬI...";
         btn.disabled = true;
 
-        const timestamp = Date.now();
+        const today = new Date().toISOString().slice(0,10);
         const payload = {
             stt: currentStudent.stt,
             name: currentStudent.name,
             dob: currentStudent.dob,
-            photo_exam: examBase64, // Gửi ảnh đã nén
-            timestamp: timestamp,
-            status: "pending",
-            signed: false
+            unit: currentStudent.department || currentStudent.company || '',
+            photo_exam: compressedPhoto,
+            timestamp: Date.now(),
+            signed: false,
+            status: "pending"
         };
 
-        // Đẩy vào nhánh 'submissions' để Admin Queue bắt được
-        await db.ref(`submissions/${new Date().toISOString().slice(0,10)}/${currentStudent.stt}`).set(payload);
-        
-        document.getElementById('step-2').classList.add('step-inactive');
-        document.getElementById('step-3').classList.remove('step-inactive');
+        try {
+            await db.ref(`submissions/${today}/${currentStudent.stt}`).set(payload);
+            document.getElementById('step-2').classList.add('step-inactive');
+            document.getElementById('step-3').classList.remove('step-inactive');
+        } catch (error) {
+            alert("Lỗi kết nối: " + error.message);
+            btn.innerText = "THỬ LẠI";
+            btn.disabled = false;
+        }
     }
-
-    window.onload = initFaceID;
 </script>
 </body>
 </html>
