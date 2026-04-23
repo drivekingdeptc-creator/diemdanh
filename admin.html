@@ -181,15 +181,34 @@
         btn.innerHTML = isVoiceActive ? '<i class="fas fa-volume-up mr-1"></i> Loa: BẬT' : '<i class="fas fa-volume-mute mr-1"></i> Loa: TẮT';
     }
 
-    async function confirmSigned() {
-        if(currentQueue.length === 0) return;
-        const current = currentQueue[0];
-        const today = new Date().toISOString().slice(0,10);
-        await db.ref(`submissions/${today}/${current.stt}`).update({ signed: true });
-        if(currentQueue.length > 1) {
-            speak(`Xác nhận anh ${current.name} đã ký xong. Mời anh ${currentQueue[1].name} lên nộp bài.`);
-        } else { speak(`Xác nhận anh ${current.name} đã hoàn thành.`); }
+// HÀM XÁC NHẬN & TỰ ĐỘNG GỌI TIẾP (SOL61 v3.3)
+async function confirmSigned() {
+    if (currentQueue.length === 0) return;
+    
+    const current = currentQueue[0]; // Người đang đứng trước bàn
+    const today = new Date().toISOString().slice(0,10);
+
+    // 1. Cập nhật trạng thái đã ký lên Firebase
+    await db.ref(`submissions/${today}/${current.stt}`).update({ signed: true });
+
+    // 2. Kiểm tra xem còn người tiếp theo trong danh sách chờ không
+    // Lưu ý: Sau khi update, currentQueue sẽ tự động cập nhật lại nhờ .on('value')
+    // Nhưng để loa báo mượt mà, ta lấy thông tin từ mảng hiện tại
+    if (currentQueue.length > 1) {
+        const next = currentQueue[1]; // Đây chính là người kế tiếp
+        
+        // Kịch bản loa: Xác nhận xong người cũ -> Gọi luôn người mới
+        const message = `Xác nhận anh ${current.name} đã hoàn thành. Mời học viên tiếp theo, anh ${next.name}, số thứ tự ${next.stt}, lên nộp bài và ký tên.`;
+        
+        speak(message);
+        
+        // Hiệu ứng hình ảnh: Tự động cuộn danh sách và hiển thị người mới (Firebase lo phần này)
+        console.log(`>>> Tự động chuyển từ ${current.name} sang ${next.name}`);
+    } else {
+        // Nếu là người cuối cùng trong hàng đợi
+        speak(`Xác nhận anh ${current.name} đã hoàn thành. Hiện tại đã hết danh sách chờ.`);
     }
+}
 
     function replayVoice() { if(currentQueue.length > 0) speak(`Mời học viên ${currentQueue[0].name} lên nộp bài.`); }
 
