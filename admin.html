@@ -181,32 +181,32 @@
         btn.innerHTML = isVoiceActive ? '<i class="fas fa-volume-up mr-1"></i> Loa: BẬT' : '<i class="fas fa-volume-mute mr-1"></i> Loa: TẮT';
     }
 
-// HÀM XÁC NHẬN & TỰ ĐỘNG GỌI TIẾP (SOL61 v3.3)
+// HÀM XÁC NHẬN & TỰ ĐỘNG GỌI TIẾP (BẢN SỬA LỖI ĐỒNG BỘ - SOL61 v3.4)
 async function confirmSigned() {
     if (currentQueue.length === 0) return;
     
-    const current = currentQueue[0]; // Người đang đứng trước bàn
+    // 1. Lưu lại thông tin người vừa hoàn thành và người kế tiếp TRƯỚC khi update
+    const currentPerson = currentQueue[0];
+    const nextPerson = currentQueue.length > 1 ? currentQueue[1] : null;
+    
     const today = new Date().toISOString().slice(0,10);
 
-    // 1. Cập nhật trạng thái đã ký lên Firebase
-    await db.ref(`submissions/${today}/${current.stt}`).update({ signed: true });
-
-    // 2. Kiểm tra xem còn người tiếp theo trong danh sách chờ không
-    // Lưu ý: Sau khi update, currentQueue sẽ tự động cập nhật lại nhờ .on('value')
-    // Nhưng để loa báo mượt mà, ta lấy thông tin từ mảng hiện tại
-    if (currentQueue.length > 1) {
-        const next = currentQueue[1]; // Đây chính là người kế tiếp
+    // 2. Thực hiện cập nhật lên Firebase (Lệnh này sẽ kích hoạt render lại giao diện)
+    try {
+        await db.ref(`submissions/${today}/${currentPerson.stt}`).update({ signed: true });
         
-        // Kịch bản loa: Xác nhận xong người cũ -> Gọi luôn người mới
-        const message = `Xác nhận anh ${current.name} đã hoàn thành. Mời học viên tiếp theo, anh ${next.name}, số thứ tự ${next.stt}, lên nộp bài và ký tên.`;
-        
-        speak(message);
-        
-        // Hiệu ứng hình ảnh: Tự động cuộn danh sách và hiển thị người mới (Firebase lo phần này)
-        console.log(`>>> Tự động chuyển từ ${current.name} sang ${next.name}`);
-    } else {
-        // Nếu là người cuối cùng trong hàng đợi
-        speak(`Xác nhận anh ${current.name} đã hoàn thành. Hiện tại đã hết danh sách chờ.`);
+        // 3. Xử lý loa thông báo dựa trên dữ liệu đã lưu tạm ở Bước 1
+        if (nextPerson) {
+            // Nếu có người kế tiếp, gọi họ ngay
+            const message = `Xác nhận anh ${currentPerson.name} đã hoàn thành. Mời học viên tiếp theo, anh ${nextPerson.name}, số thứ tự ${nextPerson.stt}, lên nộp bài và ký tên.`;
+            speak(message);
+        } else {
+            // Nếu thực sự không còn ai trong mảng tạm
+            speak(`Xác nhận anh ${currentPerson.name} đã hoàn thành. Hiện tại đã hết danh sách chờ.`);
+        }
+    } catch (error) {
+        console.error("Lỗi cập nhật:", error);
+        alert("Không thể cập nhật trạng thái. Vui lòng thử lại.");
     }
 }
 
