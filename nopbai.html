@@ -17,6 +17,8 @@
         .btn-primary { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; }
         .pulse-blue { animation: pulse 2s infinite; }
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); } 70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); } 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        .retake-alert { animation: shake 0.5s ease-in-out; border: 2px solid #ef4444 !important; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
     </style>
 </head>
 <body class="p-4 flex items-center justify-center min-h-screen">
@@ -27,59 +29,49 @@
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-sm">V</div>
             <h1 class="text-white font-black text-xl uppercase tracking-tighter">VDC Safety</h1>
         </div>
-        <p class="text-blue-400 text-[10px] font-black uppercase tracking-[0.2em]">Hệ thống nộp bài v3.2</p>
+        <p class="text-blue-400 text-[10px] font-black uppercase tracking-[0.2em]">Hệ thống nộp bài v3.3</p>
     </div>
 
     <div class="p-8">
         <div id="step-1" class="text-center">
             <i class="fas fa-user-circle text-5xl text-slate-200 mb-4"></i>
             <h2 class="text-sm font-black text-slate-800 uppercase mb-6">Nhập Số Thứ Tự (STT)</h2>
-            
-            <input type="number" id="input-stt" placeholder="VÍ DỤ: 15" 
-                   class="w-full p-5 input-vdc rounded-2xl text-center text-3xl font-black text-slate-800 mb-4"
-                   oninput="lookupStudent(this.value)">
-
-            <div id="student-info" class="hidden bg-blue-50 p-5 rounded-2xl border border-blue-100 mb-6 animate-fadeIn">
+            <input type="number" id="input-stt" placeholder="VÍ DỤ: 15" class="w-full p-5 input-vdc rounded-2xl text-center text-3xl font-black text-slate-800 mb-4" oninput="lookupStudent(this.value)">
+            <div id="student-info" class="hidden bg-blue-50 p-5 rounded-2xl border border-blue-100 mb-6">
                 <p class="text-[10px] text-blue-600 font-black uppercase mb-1">Xác nhận có phải anh/chị:</p>
                 <p id="student-name" class="text-xl font-black text-slate-800 uppercase leading-tight"></p>
                 <p id="student-detail" class="text-[10px] text-slate-400 font-bold mt-1 uppercase"></p>
             </div>
-
-            <button id="btn-next-1" disabled onclick="goToStep2()" 
-                    class="w-full py-5 btn-primary rounded-2xl font-black uppercase shadow-xl opacity-30 transition-all">
-                Đúng là tôi, tiếp tục
-            </button>
+            <button id="btn-next-1" disabled onclick="goToStep2()" class="w-full py-5 btn-primary rounded-2xl font-black uppercase shadow-xl opacity-30 transition-all">Đúng là tôi, tiếp tục</button>
         </div>
 
         <div id="step-2" class="step-inactive text-center">
+            <div id="retake-msg" class="hidden mb-4 p-3 bg-red-50 text-red-600 rounded-xl border border-red-200">
+                <p class="text-[11px] font-black uppercase"><i class="fas fa-exclamation-triangle mr-1"></i> Giảng viên yêu cầu chụp lại rõ hơn</p>
+            </div>
+
             <h2 class="text-sm font-black text-slate-800 uppercase mb-4">Chụp ảnh phiếu bài làm</h2>
-            <p class="text-[10px] text-slate-400 font-bold mb-6 uppercase tracking-wider">Lưu ý: Chụp rõ nét, không bị lóa sáng</p>
-            
-            <div id="preview-container" onclick="document.getElementById('file-input').click()" 
-                 class="relative rounded-3xl overflow-hidden bg-slate-50 border-2 border-dashed border-slate-200 mb-8 cursor-pointer min-h-[250px] flex items-center justify-center">
+            <div id="preview-container" onclick="document.getElementById('file-input').click()" class="relative rounded-3xl overflow-hidden bg-slate-50 border-2 border-dashed border-slate-200 mb-8 cursor-pointer min-h-[250px] flex items-center justify-center">
                 <img id="exam-preview" class="hidden w-full h-auto">
                 <div id="placeholder-icon" class="text-slate-300 flex flex-col items-center">
                     <i class="fas fa-camera text-6xl mb-3"></i>
                     <span class="text-[10px] font-black uppercase">Bấm để mở camera</span>
                 </div>
             </div>
-
             <input type="file" id="file-input" accept="image/*" capture="environment" class="hidden" onchange="processPhoto(this)">
-            
-            <button id="btn-submit" disabled onclick="finalSubmit()" 
-                    class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase shadow-2xl opacity-30 pulse-blue">
-                Gửi bài thi ngay
-            </button>
-            <button onclick="location.reload()" class="mt-6 text-slate-400 font-bold text-[10px] uppercase underline">Quay lại nhập STT</button>
+            <button id="btn-submit" disabled onclick="finalSubmit()" class="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase shadow-2xl opacity-30 pulse-blue">Gửi bài thi ngay</button>
         </div>
 
         <div id="step-3" class="step-inactive text-center py-10">
             <div class="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-4xl shadow-2xl animate-bounce">
                 <i class="fas fa-check"></i>
             </div>
-            <h2 class="text-2xl font-black text-slate-800 uppercase mb-2">Thành công!</h2>
-            <p class="text-slate-500 text-xs font-bold px-6 leading-relaxed uppercase">Bài thi của anh/chị đã được gửi.<br>Mời lên bàn giảng viên để ký tên.</p>
-            <button onclick="location.reload()" class="mt-10 py-3 px-8 bg-slate-100 rounded-xl text-slate-600 font-black uppercase text-[10px]">Nộp bài khác</button>
+            <h2 class="text-2xl font-black text-slate-800 uppercase mb-2">Đã gửi bài</h2>
+            <p id="waiting-msg" class="text-slate-500 text-xs font-bold px-6 leading-relaxed uppercase">Vui lòng đợi giảng viên duyệt ảnh...</p>
+            <div id="final-action" class="hidden mt-6">
+                <p class="text-green-600 font-black text-sm uppercase mb-4">Ảnh đã đạt! Mời anh/chị lên ký tên.</p>
+                <button onclick="location.reload()" class="py-3 px-8 bg-slate-100 rounded-xl text-slate-600 font-black uppercase text-[10px]">Nộp bài khác</button>
+            </div>
         </div>
     </div>
 </div>
@@ -98,20 +90,15 @@
 
     let currentStudent = null;
     let compressedPhoto = null;
+    let statusListener = null;
 
-    // 1. TÌM KIẾM HỌC VIÊN THEO STT
     async function lookupStudent(stt) {
         if (!stt) { hideStudent(); return; }
-        
-        // Lấy thông tin phiên làm việc hiện tại
         const sessionSnap = await db.ref('current_session').once('value');
         const session = sessionSnap.val();
         if (!session) return;
-
-        // Truy vấn học viên từ đúng lớp đang mở
         const studentSnap = await db.ref(`classes/${session.source}/students/${stt}`).once('value');
         const student = studentSnap.val();
-
         if (student) {
             currentStudent = student;
             document.getElementById('student-info').classList.remove('hidden');
@@ -119,9 +106,7 @@
             document.getElementById('student-detail').innerText = `${student.dob} | ${student.department || student.company || ''}`;
             document.getElementById('btn-next-1').disabled = false;
             document.getElementById('btn-next-1').classList.remove('opacity-30');
-        } else {
-            hideStudent();
-        }
+        } else { hideStudent(); }
     }
 
     function hideStudent() {
@@ -131,13 +116,11 @@
         currentStudent = null;
     }
 
-    // 2. CHUYỂN BƯỚC CHỤP ẢNH
     function goToStep2() {
         document.getElementById('step-1').classList.add('step-inactive');
         document.getElementById('step-2').classList.remove('step-inactive');
     }
 
-    // 3. NÉN ẢNH VÀ PREVIEW
     function processPhoto(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
@@ -147,12 +130,10 @@
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    // Nén về chiều ngang 1200px để Gemini đọc tốt nhất
                     const scale = 1200 / img.width;
                     canvas.width = 1200;
                     canvas.height = img.height * scale;
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
                     compressedPhoto = canvas.toDataURL('image/jpeg', 0.8);
                     document.getElementById('exam-preview').src = compressedPhoto;
                     document.getElementById('exam-preview').classList.remove('hidden');
@@ -165,12 +146,10 @@
         }
     }
 
-    // 4. GỬI LÊN FIREBASE (QUEUE SYSTEM)
     async function finalSubmit() {
         const btn = document.getElementById('btn-submit');
         btn.innerText = "ĐANG GỬI...";
         btn.disabled = true;
-
         const today = new Date().toISOString().slice(0,10);
         const payload = {
             stt: currentStudent.stt,
@@ -182,16 +161,44 @@
             signed: false,
             status: "pending"
         };
-
         try {
             await db.ref(`submissions/${today}/${currentStudent.stt}`).set(payload);
             document.getElementById('step-2').classList.add('step-inactive');
             document.getElementById('step-3').classList.remove('step-inactive');
+            startListeningStatus(); // Bắt đầu nghe lệnh từ Admin
         } catch (error) {
-            alert("Lỗi kết nối: " + error.message);
+            alert("Lỗi: " + error.message);
             btn.innerText = "THỬ LẠI";
             btn.disabled = false;
         }
+    }
+
+    // LẮNG NGHE TRẠNG THÁI TỪ ADMIN
+    function startListeningStatus() {
+        const today = new Date().toISOString().slice(0,10);
+        if (statusListener) statusListener.off();
+        
+        statusListener = db.ref(`submissions/${today}/${currentStudent.stt}`);
+        statusListener.on('value', snap => {
+            const data = snap.val();
+            if (!data) return;
+
+            // Nếu giảng viên yêu cầu chụp lại
+            if (data.status === "retake") {
+                document.getElementById('step-3').classList.add('step-inactive');
+                document.getElementById('step-2').classList.remove('step-inactive');
+                document.getElementById('retake-msg').classList.remove('hidden');
+                document.getElementById('preview-container').classList.add('retake-alert');
+                document.getElementById('btn-submit').innerText = "GỬI LẠI BÀI THI";
+            }
+
+            // Nếu giảng viên đã xác nhận OK (đã ký)
+            if (data.signed === true) {
+                document.getElementById('waiting-msg').classList.add('hidden');
+                document.getElementById('final-action').classList.remove('hidden');
+                statusListener.off(); // Dừng lắng nghe
+            }
+        });
     }
 </script>
 </body>
