@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VDC SAFETY ADMIN v6.5 - FIX DROPLIST</title>
+    <title>VDC SAFETY ADMIN v7.0</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,31 +14,26 @@
         .tab-content { display: none; height: calc(100vh - 40px); overflow-y: auto; padding-bottom: 100px; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         .nav-btn.active { background: #1e293b; border-left: 4px solid #3b82f6; color: white; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .popup-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 1000; align-items: center; justify-content: center; }
         ::-webkit-scrollbar { height: 8px; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .popup-overlay { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 1000; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="flex">
 
-    <div id="photoPopup" class="popup-overlay" onclick="this.style.display='none'">
-        <img id="popupImg" class="max-h-[90vh] max-w-[90vw] border-4 border-white rounded-2xl shadow-2xl" src="">
-    </div>
-
     <aside class="bg-slate-900 text-slate-400 flex flex-col h-screen w-[280px] shadow-2xl shrink-0">
         <div class="p-8 border-b border-slate-800 text-center">
-            <h1 class="font-black text-white text-lg tracking-tighter uppercase">VDC Safety <span class="text-blue-500 text-xs">v6.5</span></h1>
+            <h1 class="font-black text-white text-lg tracking-tighter uppercase">VDC Safety <span class="text-blue-500 text-xs">v7.0</span></h1>
         </div>
         <nav class="flex-1 p-4 space-y-2 mt-4">
             <button onclick="switchTab('tab-classes', this)" class="nav-btn active w-full flex items-center p-4 rounded-2xl text-left transition-all">
                 <i class="fas fa-university w-5"></i><span class="ml-4 font-bold text-[10px] uppercase">B1: Quản lý Lớp</span>
             </button>
             <button onclick="switchTab('tab-attendance', this)" class="nav-btn w-full flex items-center p-4 rounded-2xl text-left transition-all">
-                <i class="fas fa-id-card w-5"></i><span class="ml-4 font-bold text-[10px] uppercase">B2: Điểm danh & FaceID</span>
+                <i class="fas fa-id-card w-5"></i><span class="ml-4 font-bold text-[10px] uppercase">B2: Điểm danh</span>
             </button>
             <button onclick="switchTab('tab-queue', this)" class="nav-btn w-full flex items-center p-4 rounded-2xl text-left transition-all">
-                <i class="fas fa-bullhorn w-5"></i><span class="ml-4 font-bold text-[10px] uppercase">B3: Điều phối nộp bài</span>
+                <i class="fas fa-bullhorn w-5"></i><span class="ml-4 font-bold text-[10px] uppercase">B3: Nộp bài</span>
             </button>
             <button onclick="switchTab('tab-ai', this)" class="nav-btn w-full flex items-center p-4 rounded-2xl text-left transition-all">
                 <i class="fas fa-robot w-5"></i><span class="ml-4 font-bold text-[10px] uppercase">B4: AI Chấm điểm</span>
@@ -49,18 +44,14 @@
     <main class="flex-1 p-10 relative overflow-hidden">
         
         <section id="tab-classes" class="tab-content active">
-            <div class="flex justify-between items-center mb-8">
+             <div class="flex justify-between items-center mb-8">
                 <h2 class="text-4xl font-black text-slate-900 uppercase">Quản lý Lớp học</h2>
                 <button onclick="openClassModal()" class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs shadow-lg">+ THÊM LỚP</button>
-            </div>
-            <div id="active-session-box" class="hidden mb-8 p-6 bg-blue-600 rounded-[2rem] text-white flex justify-between items-center">
-                <div><p class="text-[10px] font-black uppercase opacity-60">Đang hoạt động</p><h3 id="active-class-name" class="text-2xl font-black uppercase tracking-tighter">---</h3></div>
-                <i class="fas fa-broadcast-tower text-3xl opacity-30"></i>
             </div>
             <div id="class-grid" class="grid grid-cols-1 md:grid-cols-4 gap-6"></div>
             <div id="student-editor" class="hidden mt-10 bg-white rounded-[3rem] shadow-sm border p-10">
                 <div class="flex justify-between items-center mb-8 border-b pb-6">
-                    <h3 id="editing-class-title" class="font-black text-xl uppercase text-slate-800 tracking-tighter">---</h3>
+                    <h3 id="editing-class-title" class="font-black text-xl uppercase text-slate-800">---</h3>
                     <div class="flex gap-2">
                         <button onclick="openImportModal()" class="px-5 py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase">Nhập từ Excel</button>
                         <button onclick="closeEditor()" class="px-5 py-3 bg-slate-100 text-slate-400 rounded-xl text-[10px] font-black uppercase">Đóng</button>
@@ -71,24 +62,15 @@
         </section>
 
         <section id="tab-attendance" class="tab-content">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-4xl font-black text-slate-900 uppercase">Điểm danh</h2>
-            </div>
-            <div class="bg-white rounded-[2.5rem] border overflow-hidden shadow-sm">
+             <div class="bg-white rounded-[2.5rem] border overflow-hidden shadow-sm">
                 <table class="w-full"><tbody id="attendance-list"></tbody></table>
             </div>
         </section>
 
         <section id="tab-queue" class="tab-content">
             <div class="flex justify-between items-center mb-8">
-                <div>
-                    <h2 class="text-4xl font-black text-slate-900 uppercase">Điều phối Nộp bài</h2>
-                    <p id="display-folder-name" class="text-[10px] text-blue-600 font-black uppercase italic">Thư mục: Đang tải...</p>
-                </div>
                 <div class="flex gap-4">
                     <select id="folder-select" onchange="updateStorageFolder(this.value)" class="bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-2xl font-black text-[10px] outline-none shadow-sm"></select>
-                    <button onclick="confirmCreateFolder()" class="bg-blue-600 text-white p-4 rounded-2xl shadow-lg"><i class="fas fa-folder-plus"></i></button>
-                    <button onclick="toggleVoice()" id="voice-btn" class="bg-green-500 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase shadow-lg">Loa: BẬT</button>
                 </div>
             </div>
             <div id="queue-scroll" class="flex gap-6 overflow-x-auto pb-10 snap-x"></div>
@@ -96,41 +78,71 @@
 
         <section id="tab-ai" class="tab-content">
             <div class="mb-10 text-center"><h2 class="text-4xl font-black text-slate-900 uppercase">AI Auto Grader</h2></div>
-            <div class="max-w-xl mx-auto bg-white p-12 rounded-[3rem] shadow-xl border-t-8 border-blue-600 space-y-8">
-                <div class="bg-slate-50 p-6 rounded-3xl"><label class="text-[10px] font-black text-slate-400 uppercase">Folder ID</label><input type="text" id="folder-id" class="w-full bg-transparent border-b-2 border-slate-200 p-2 font-bold text-lg outline-none"></div>
-                <button onclick="runAIGrader()" class="w-full py-8 bg-slate-900 text-white rounded-[2rem] font-black text-2xl uppercase shadow-2xl hover:bg-blue-600 transition-all">CHẤM ĐIỂM AI</button>
+            <div class="max-w-2xl mx-auto bg-white p-12 rounded-[3rem] shadow-xl border-t-8 border-blue-600 space-y-8">
+                
+                <div class="bg-slate-50 p-6 rounded-3xl">
+                    <label class="text-[10px] font-black text-slate-400 uppercase">1. Chọn Thư mục cần chấm</label>
+                    <select id="ai-folder-select" class="w-full bg-transparent border-b-2 border-slate-200 p-2 font-bold text-lg outline-none text-blue-600"></select>
+                </div>
+
+                <div class="bg-slate-50 p-6 rounded-3xl">
+                    <label class="text-[10px] font-black text-slate-400 uppercase">2. Tải lên Ảnh Đáp án (Key)</label>
+                    <input type="file" id="ai-key-input" accept="image/*" class="w-full font-bold text-xs mt-2" onchange="previewKey(this)">
+                    <img id="key-preview" class="hidden mt-4 w-full h-40 object-cover rounded-xl border">
+                </div>
+
+                <div id="grader-status" class="hidden p-4 bg-slate-900 rounded-2xl text-white text-center">
+                    <p class="text-xs font-black animate-pulse">ĐANG CHẤM BÀI... VUI LÒNG ĐỢI</p>
+                </div>
+
+                <button id="start-ai-btn" onclick="startAICheck()" class="w-full py-8 bg-slate-900 text-white rounded-[2rem] font-black text-2xl uppercase shadow-2xl hover:bg-blue-600 transition-all">BẮT ĐẦU CHẤM</button>
             </div>
         </section>
     </main>
 
-    <div id="classModal" class="popup-overlay"><div class="bg-white p-10 rounded-[3rem] w-full max-w-md shadow-2xl"><h2 class="text-2xl font-black uppercase mb-6">Tạo lớp mới</h2><input type="text" id="new-class-name" class="w-full p-5 bg-slate-50 border rounded-2xl font-bold mb-4" placeholder="Tên lớp..."><div class="flex gap-4"><button onclick="confirmCreateClass()" class="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase">Tạo ngay</button><button onclick="closeClassModal()" class="flex-1 py-4 bg-slate-100 text-slate-400 rounded-2xl font-black uppercase">Hủy</button></div></div></div>
-    <div id="importModal" class="popup-overlay"><div class="bg-white p-10 rounded-[3rem] w-full max-w-xl shadow-2xl"><h2 class="text-xl font-black uppercase mb-4 text-slate-900">Dán từ Excel</h2><textarea id="import-area" rows="8" class="w-full p-6 bg-slate-50 border-2 border-dashed rounded-3xl font-mono text-xs mb-6 outline-none" placeholder="1	Tên..."></textarea><div class="flex gap-4"><button onclick="processImport()" class="flex-1 py-5 bg-blue-600 text-white rounded-2xl font-black uppercase">Xử lý</button><button onclick="closeImportModal()" class="flex-1 py-5 bg-slate-100 text-slate-400 rounded-2xl font-black uppercase">Hủy</button></div></div></div>
+    <div id="importModal" class="popup-overlay"><div class="bg-white p-10 rounded-[3rem] w-full max-w-xl shadow-2xl"><textarea id="import-area" rows="8" class="w-full p-6 bg-slate-50 border-2 border-dashed rounded-3xl font-mono text-xs mb-6 outline-none"></textarea><div class="flex gap-4"><button onclick="processImport()" class="flex-1 py-5 bg-blue-600 text-white rounded-2xl font-black uppercase">Xử lý</button></div></div></div>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxzLK_ZNVHoMTInV_Mo-_-q6fMUYlR1uLElrev9h-HwLXg70NVZDyX0veXPDmDmAVk/exec";
     const firebaseConfig = { databaseURL: "https://hepc-ed95d-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let currentQueue = [], isVoiceActive = true, editingClassId = null;
 
-    // --- QUAN TRỌNG: KHỞI TẠO DROPLIST NGAY KHI TẢI TRANG ---
-    function initFolderDroplist() {
-        db.ref('drive_folders').on('value', snap => {
-            const sel = document.getElementById('folder-select');
-            const folders = snap.val() || {};
-            sel.innerHTML = '<option value="">-- Chọn Folder --</option>';
-            Object.values(folders).sort((a,b)=>b.name.localeCompare(a.name)).forEach(f => {
-                sel.innerHTML += `<option value="${f.id}">${f.name}</option>`;
-            });
-            // Tự động chọn thư mục từ session
-            db.ref('current_session/storage_id').once('value', s => {
-                if(s.val()) {
-                    sel.value = s.val();
-                    document.getElementById('display-folder-name').innerText = "Thư mục: " + (sel.options[sel.selectedIndex]?.text || "Chưa chọn");
-                    document.getElementById('folder-id').value = s.val();
-                }
-            });
-        });
+    let keyBase64 = "";
+
+    function previewKey(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                keyBase64 = e.target.result;
+                document.getElementById('key-preview').src = e.target.result;
+                document.getElementById('key-preview').classList.remove('hidden');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    async function startAICheck() {
+        const folderId = document.getElementById('ai-folder-select').value;
+        if(!folderId || !keyBase64) return alert("Vui lòng chọn thư mục và tải ảnh đáp án!");
+
+        const btn = document.getElementById('start-ai-btn');
+        const status = document.getElementById('grader-status');
+        btn.disabled = true; btn.innerText = "HỆ THỐNG ĐANG CHẠY...";
+        status.classList.remove('hidden');
+
+        // Gọi hàm trực tiếp trên Apps Script
+        google.script.run.withSuccessHandler(count => {
+            alert("✅ Hoàn thành! Đã chấm thêm " + count + " bài mới.");
+            btn.disabled = false; btn.innerText = "BẮT ĐẦU CHẤM";
+            status.classList.add('hidden');
+        }).vdc_StartGrader(folderId, keyBase64);
+    }
+
+    // Đồng bộ Droplist Folders
+    function syncFolders() {
+        const list = document.getElementById('folder-select').innerHTML;
+        document.getElementById('ai-folder-select').innerHTML = list;
     }
 
     function switchTab(id, btn) {
@@ -138,104 +150,13 @@
         document.getElementById(id).classList.add('active');
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        if(id === 'tab-ai') syncFolders();
         if(id === 'tab-classes') loadClasses();
-        if(id === 'tab-attendance') initAttendance();
-        if(id === 'tab-queue') { 
-            initQueue();
-            // ÉP GAS ĐỒNG BỘ MỖI KHI VÀO TAB
-            fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "syncFolders" }) }); 
-        }
+        if(id === 'tab-queue') { initFolderDroplist(); initQueue(); }
     }
 
-    // --- B1: QUẢN LÝ LỚP ---
-    function loadClasses() {
-        db.ref('classes').on('value', snap => {
-            const grid = document.getElementById('class-grid'); grid.innerHTML = '';
-            const data = snap.val() || {};
-            Object.keys(data).forEach(id => {
-                grid.innerHTML += `<div class="bg-white p-8 rounded-[2rem] border shadow-sm"><h3 class="font-black text-xs uppercase mb-6">${data[id].name}</h3><div class="flex gap-2"><button onclick="activateClass('${id}', '${data[id].name}')" class="flex-1 py-2 bg-blue-600 text-white rounded-xl text-[9px] font-black uppercase">Mở Lớp</button><button onclick="editClassStudents('${id}', '${data[id].name}')" class="flex-1 py-2 bg-slate-100 rounded-xl text-[9px] font-black uppercase">Sửa DS</button></div></div>`;
-            });
-        });
-        db.ref('current_session').on('value', snap => {
-            const s = snap.val(); if(s) { document.getElementById('active-session-box').classList.remove('hidden'); document.getElementById('active-class-name').innerText = s.class; }
-        });
-    }
-
-    function editClassStudents(id, name) {
-        editingClassId = id; document.getElementById('student-editor').classList.remove('hidden'); document.getElementById('editing-class-title').innerText = name;
-        db.ref(`classes/${id}/students`).on('value', snap => {
-            const b = document.getElementById('student-list-body'); b.innerHTML = ''; const s = snap.val() || {};
-            Object.keys(s).sort((a,b)=>a-b).forEach(stt => { 
-                b.innerHTML += `<tr class="border-b font-bold"><td class="p-4 text-center text-blue-500 font-black">${stt}</td><td class="p-4 uppercase text-xs">${s[stt].name}</td><td class="p-4 text-center space-x-3"><button onclick="editInfo('${stt}', '${s[stt].name}')" class="text-blue-400"><i class="fas fa-edit"></i></button><button onclick="removeStudent('${stt}')" class="text-red-300"><i class="fas fa-trash-alt"></i></button></td></tr>`; 
-            });
-        });
-    }
-
-    async function editInfo(stt, oldName) { const newName = prompt("Sửa tên học viên:", oldName); if(newName) await db.ref(`classes/${editingClassId}/students/${stt}`).update({ name: newName }); }
-    async function activateClass(id, name) { await db.ref('current_session').set({ source: id, class: name, timestamp: Date.now() }); alert("Đã mở lớp!"); }
-
-    // --- B3: HÀNG ĐỢI & LƯU DRIVE ---
-    function initQueue() {
-        const today = new Date().toISOString().slice(0,10);
-        db.ref(`submissions/${today}`).on('value', snap => {
-            const data = snap.val() || {};
-            currentQueue = Object.values(data).filter(i => !i.signed && i.status !== 'retake').sort((a,b)=>a.timestamp - b.timestamp);
-            renderQueue();
-        });
-    }
-
-    function renderQueue() {
-        const scroll = document.getElementById('queue-scroll'); scroll.innerHTML = '';
-        if(currentQueue.length === 0) { scroll.innerHTML = '<p class="w-full text-center py-20 text-slate-300 font-black uppercase">Trống</p>'; return; }
-        currentQueue.forEach((t, idx) => {
-            const isFirst = idx === 0;
-            scroll.innerHTML += `
-                <div class="snap-start shrink-0 w-[420px] bg-white rounded-[2.5rem] p-6 border-4 ${isFirst?'border-blue-600 shadow-2xl':'border-transparent opacity-50'}">
-                    <div class="relative mb-6"><img src="${t.photo_exam}" class="w-full h-64 object-cover rounded-3xl" onclick="openPhoto(this.src)"><span class="absolute top-4 left-4 bg-blue-600 text-white px-5 py-1 rounded-full text-[10px] font-black uppercase">STT: ${t.stt}</span></div>
-                    <h3 class="text-3xl font-black uppercase text-slate-800 tracking-tighter mb-8">${t.name}</h3>
-                    ${isFirst? `<button onclick="confirmAction('sign')" id="btn-approve" class="w-full py-5 bg-slate-900 text-white rounded-2xl font-black text-xl uppercase shadow-lg">DUYỆT - KÝ TÊN</button>`: `<div class="w-full py-5 bg-slate-100 text-slate-400 rounded-2xl font-black text-center text-sm uppercase">Đang chờ...</div>`}
-                </div>`;
-        });
-    }
-
-    async function confirmAction(type) {
-        if(currentQueue.length === 0) return; const c = currentQueue[0], today = new Date().toISOString().slice(0,10);
-        const storageId = document.getElementById('folder-select').value;
-        if(type === 'sign') {
-            if(!storageId) return alert("Chưa chọn Folder!");
-            const btn = document.getElementById('btn-approve'); btn.innerText = "ĐANG LƯU DRIVE..."; btn.disabled = true;
-            fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "saveToDrive", params: { folderId: storageId, photoData: c.photo_exam, stt: c.stt, name: c.name } }) });
-            await db.ref(`submissions/${today}/${c.stt}`).update({ signed: true });
-            btn.innerText = "DUYỆT - KÝ TÊN"; btn.disabled = false;
-            speak(`Xác nhận anh ${c.name} nộp bài.`);
-        } else { await db.ref(`submissions/${today}/${c.stt}`).update({ status: 'retake' }); speak(`Chụp lại bài.`); }
-    }
-
-    function updateStorageFolder(id) { if(id) { db.ref('current_session').update({ storage_id: id }); document.getElementById('folder-id').value = id; } }
-    function confirmCreateFolder() { fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "createFolder" }) }); alert("Đang yêu cầu tạo thư mục..."); }
-
-    // --- KHỞI CHẠY ---
-    window.onload = () => {
-        loadClasses();
-        initFolderDroplist(); // CHẠY NGAY KHI TẢI TRANG
-    };
-
-    // UTILS GIỮ NGUYÊN
-    function closeEditor() { document.getElementById('student-editor').classList.add('hidden'); }
-    function openClassModal() { document.getElementById('classModal').style.display='flex'; }
-    function closeClassModal() { document.getElementById('classModal').style.display='none'; }
-    async function confirmCreateClass() { const n = document.getElementById('new-class-name').value; if(n) { await db.ref('classes').push().set({ name: n, students: {} }); closeClassModal(); } }
-    function openImportModal() { document.getElementById('importModal').style.display='flex'; }
-    function closeImportModal() { document.getElementById('importModal').style.display='none'; }
-    async function processImport() {
-        const raw = document.getElementById('import-area').value; const lines = raw.split('\n');
-        for (let line of lines) { const p = line.split('\t'); if (p.length >= 2) await db.ref(`classes/${editingClassId}/students/${p[0].trim()}`).set({ stt: p[0].trim(), name: p[1].trim(), dob: p[2]||'', department: p[3]||'' }); }
-        alert("Xong!"); closeImportModal();
-    }
-    async function removeStudent(stt) { if(confirm("Xóa?")) await db.ref(`classes/${editingClassId}/students/${stt}`).remove(); }
-    function openPhoto(url) { document.getElementById('popupImg').src = url; document.getElementById('photoPopup').style.display='flex'; }
-    function speak(t) { if(isVoiceActive) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang='vi-VN'; u.rate=0.9; window.speechSynthesis.speak(u); } }
-    function toggleVoice() { isVoiceActive = !isVoiceActive; document.getElementById('voice-btn').classList.toggle('bg-slate-400'); }
+    // Các hàm loadClasses, initFolderDroplist, processImport cũ của anh...
+    window.onload = loadClasses;
 </script>
 </body>
 </html>
