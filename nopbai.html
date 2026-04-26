@@ -3,36 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VDC SAFETY - NỘP BÀI THI</title>
+    <title>VDC SAFETY - NỘP BÀI THI v6.6</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background: #0f172a; color: white; }
-        .btn-gradient { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: white; min-height: 100vh; }
         .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .btn-gradient { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .loading-ring { border: 2px solid #f3f3f3; border-top: 2px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .animate-fadeIn { animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4">
+<body class="flex items-center justify-center p-4">
 
     <div class="w-full max-w-md space-y-6">
-        <div class="text-center space-y-2">
-            <h1 class="text-3xl font-black tracking-tighter uppercase">VDC Safety</h1>
-            <p class="text-blue-400 text-[10px] font-bold uppercase tracking-widest">Hệ thống nộp bài thi OSH</p>
+        <div class="text-center">
+            <h1 class="text-4xl font-black tracking-tighter uppercase italic">VDC Safety</h1>
+            <p class="text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] mt-1">Hệ thống nộp bài trực tuyến</p>
         </div>
 
         <div class="glass p-8 rounded-[2.5rem] shadow-2xl space-y-6">
             <div>
-                <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-1">Số thứ tự của anh</label>
+                <label class="block text-[10px] font-black text-slate-500 uppercase mb-2 ml-1 tracking-widest">Số thứ tự của anh</label>
                 <div class="relative">
                     <input type="number" id="stt-input" oninput="handleSTTInput(this.value)" 
-                           class="w-full bg-slate-800/50 border-2 border-slate-700 rounded-2xl py-5 px-6 text-2xl font-black text-white focus:border-blue-500 focus:outline-none transition-all" 
-                           placeholder="Nhập số STT...">
+                           class="w-full bg-slate-900/50 border-2 border-slate-700 rounded-2xl py-5 px-6 text-2xl font-black text-white focus:border-blue-500 focus:outline-none transition-all" 
+                           placeholder="Ví dụ: 14">
                     <div id="search-loading" class="absolute right-6 top-1/2 -translate-y-1/2 hidden">
                         <div class="loading-ring"></div>
                     </div>
@@ -40,15 +42,15 @@
             </div>
 
             <div id="student-info" class="hidden animate-fadeIn">
-                <div class="bg-blue-600/10 border border-blue-500/30 rounded-3xl p-6 space-y-1">
-                    <p class="text-[9px] font-black text-blue-400 uppercase">Học viên xác nhận:</p>
-                    <h2 id="display-name" class="text-xl font-black uppercase text-white leading-tight">---</h2>
-                    <p id="display-unit" class="text-xs font-bold text-slate-400 italic">---</p>
+                <div class="bg-blue-600/10 border border-blue-500/30 rounded-3xl p-6">
+                    <p class="text-[9px] font-black text-blue-400 uppercase mb-1">Học viên:</p>
+                    <h2 id="display-name" class="text-xl font-black uppercase text-white tracking-tight">---</h2>
+                    <p id="display-unit" class="text-xs font-bold text-slate-500 italic mt-1">---</p>
                 </div>
             </div>
 
             <div id="upload-zone" class="hidden space-y-6 animate-fadeIn">
-                <div class="relative group">
+                <div class="relative">
                     <div id="preview-container" class="hidden">
                         <img id="photo-preview" class="w-full h-72 object-cover rounded-3xl border-2 border-blue-500 shadow-2xl">
                         <button onclick="resetPhoto()" class="absolute -top-3 -right-3 bg-red-500 w-10 h-10 rounded-full flex items-center justify-center shadow-lg"><i class="fas fa-times text-white"></i></button>
@@ -56,7 +58,7 @@
                     
                     <label id="camera-label" class="flex flex-col items-center justify-center w-full h-72 border-2 border-dashed border-slate-700 rounded-3xl bg-slate-800/30 cursor-pointer hover:bg-slate-800/50 transition-all">
                         <i class="fas fa-camera text-4xl text-slate-600 mb-4"></i>
-                        <span class="text-xs font-bold text-slate-500 uppercase">Chụp ảnh bài thi</span>
+                        <span class="text-[10px] font-black text-slate-500 uppercase">Bấm để chụp ảnh bài thi</span>
                         <input type="file" accept="image/*" capture="environment" class="hidden" onchange="previewImage(this)">
                     </label>
                 </div>
@@ -67,69 +69,55 @@
             </div>
         </div>
 
-        <p class="text-center text-slate-600 text-[10px] font-bold uppercase tracking-widest">© 2026 VDC SAFETY SYSTEM</p>
+        <p class="text-center text-slate-700 text-[10px] font-black uppercase tracking-[0.3em]">© VDC SAFETY SYSTEM 2026</p>
     </div>
 
 <script>
-    // FIREBASE CONFIG
-    const firebaseConfig = { databaseURL: "https://hepc-ed95d-default-rtdb.firebaseio.com" };
-    firebase.initializeApp(firebaseConfig);
+    // URL WEB APP CỦA ANH
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxzLK_ZNVHoMTInV_Mo-_-q6fMUYlR1uLElrev9h-HwLXg70NVZDyX0veXPDmDmAVk/exec";
+    
+    firebase.initializeApp({ databaseURL: "https://hepc-ed95d-default-rtdb.firebaseio.com" });
     const db = firebase.database();
 
-    let searchTimeout = null;
-    let selectedStudent = null;
-    let base64Photo = null;
+    let searchTimeout = null, selectedStudent = null, base64Photo = null;
 
-    // --- XỬ LÝ NHẬP STT (DEBOUNCE 500MS) ---
+    // SỬA LỖI NHẢY SỐ STT (DEBOUNCE)
     function handleSTTInput(val) {
         document.getElementById('student-info').classList.add('hidden');
         document.getElementById('upload-zone').classList.add('hidden');
-        document.getElementById('search-loading').classList.remove('hidden');
-
         if (searchTimeout) clearTimeout(searchTimeout);
-        
-        searchTimeout = setTimeout(() => {
-            findStudent(val);
-        }, 500); // Đợi học viên gõ xong 0.5s mới tìm
+        if (!val) return;
+
+        document.getElementById('search-loading').classList.remove('hidden');
+        searchTimeout = setTimeout(() => findStudent(val), 600); // Đợi 0.6s
     }
 
     async function findStudent(stt) {
         document.getElementById('search-loading').classList.add('hidden');
-        if (!stt) return;
-
-        try {
-            const sessionSnap = await db.ref('current_session').once('value');
-            const session = sessionSnap.val();
-            
-            if (session && session.source) {
-                const studentSnap = await db.ref(`classes/${session.source}/students/${stt}`).once('value');
-                const student = studentSnap.val();
-
-                if (student) {
-                    selectedStudent = student;
-                    document.getElementById('display-name').innerText = student.name;
-                    document.getElementById('display-unit').innerText = student.department || student.company || 'Tự do';
-                    document.getElementById('student-info').classList.remove('hidden');
-                    document.getElementById('upload-zone').classList.remove('hidden');
-                } else {
-                    alert("⚠️ Không tìm thấy học viên số " + stt);
-                }
+        const sessionSnap = await db.ref('current_session').once('value');
+        const session = sessionSnap.val();
+        if (session && session.source) {
+            const studentSnap = await db.ref(`classes/${session.source}/students/${stt}`).once('value');
+            const student = studentSnap.val();
+            if (student) {
+                selectedStudent = student;
+                document.getElementById('display-name').innerText = student.name;
+                document.getElementById('display-unit').innerText = student.department || 'VDC Safety';
+                document.getElementById('student-info').classList.remove('hidden');
+                document.getElementById('upload-zone').classList.remove('hidden');
             }
-        } catch (e) {
-            console.error(e);
         }
     }
 
-    // --- XỬ LÝ ẢNH ---
     function previewImage(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = (e) => {
                 base64Photo = e.target.result;
                 document.getElementById('photo-preview').src = e.target.result;
                 document.getElementById('preview-container').classList.remove('hidden');
                 document.getElementById('camera-label').classList.add('hidden');
-            }
+            };
             reader.readAsDataURL(input.files[0]);
         }
     }
@@ -140,34 +128,46 @@
         document.getElementById('camera-label').classList.remove('hidden');
     }
 
-    // --- NỘP BÀI ---
+    // NỘP BÀI: LƯU DRIVE NGAY LẬP TỨC
     async function submitExam() {
         if (!base64Photo) return alert("Vui lòng chụp ảnh bài thi!");
         
         const btn = document.getElementById('submit-btn');
-        btn.innerText = "ĐANG GỬI BÀI...";
+        btn.innerText = "ĐANG LƯU DRIVE & GỬI BÀI...";
         btn.disabled = true;
 
-        const today = new Date().toISOString().slice(0,10);
-        const submission = {
-            stt: selectedStudent.stt,
-            name: selectedStudent.name,
-            dob: selectedStudent.dob || '',
-            unit: selectedStudent.department || '',
-            photo_exam: base64Photo,
-            timestamp: Date.now(),
-            signed: false,
-            status: 'pending'
-        };
-
         try {
-            await db.ref(`submissions/${today}/${selectedStudent.stt}`).set(submission);
-            alert("✅ Đã nộp bài thành công! Vui lòng chờ thầy gọi tên để ký xác nhận.");
+            const sessionSnap = await db.ref('current_session').once('value');
+            const storageId = sessionSnap.val()?.storage_id;
+            if (!storageId) throw new Error("Thầy chưa mở thư mục nộp bài!");
+
+            // 1. GỌI GAS GHI FILE DRIVE
+            fetch(GAS_URL, {
+                method: "POST", mode: "no-cors",
+                body: JSON.stringify({
+                    action: "saveToDrive",
+                    params: { folderId: storageId, photoData: base64Photo, stt: selectedStudent.stt, name: selectedStudent.name }
+                })
+            });
+
+            // 2. GHI FIREBASE
+            const today = new Date().toISOString().slice(0,10);
+            await db.ref(`submissions/${today}/${selectedStudent.stt}`).set({
+                stt: selectedStudent.stt,
+                name: selectedStudent.name,
+                dob: selectedStudent.dob || '',
+                unit: selectedStudent.department || '',
+                photo_exam: base64Photo,
+                timestamp: Date.now(),
+                signed: false,
+                status: 'pending'
+            });
+
+            alert("✅ Thành công! Ảnh bài thi đã được lưu vào Drive.");
             location.reload();
         } catch (e) {
-            alert("Lỗi nộp bài: " + e.message);
-            btn.innerText = "Nộp bài ngay";
-            btn.disabled = false;
+            alert("Lỗi: " + e.message);
+            btn.innerText = "Nộp bài ngay"; btn.disabled = false;
         }
     }
 </script>
