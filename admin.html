@@ -2,110 +2,134 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>VDC Admin v3.5 - HỆ THỐNG QUẢN TRỊ OSH AI</title>
+    <title>VDC Admin SOL61 v5.1 - FULL FEATURES</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --primary: #0f172a; --accent: #3b82f6; }
-        body { background: #f8fafc; font-family: 'Inter', sans-serif; overflow: hidden; }
-        .tab-content { display: none; height: calc(100vh - 40px); overflow-y: auto; padding-bottom: 80px; }
+        body { background: #f1f5f9; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .tab-content { display: none; height: calc(100vh - 40px); overflow-y: auto; padding-bottom: 100px; }
         .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .nav-btn.active { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
-        .popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 999; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-        #sidebar { transition: all 0.3s ease; width: 260px; }
+        #sidebar { width: 260px; transition: 0.3s; }
         #sidebar.collapsed { width: 80px; }
-        #sidebar.collapsed .nav-text, #sidebar.collapsed .logo-text { display: none; }
+        #sidebar.collapsed .nav-text { display: none; }
+        .popup-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; align-items: center; justify-content: center; }
+        .card-vdc { background: white; border-radius: 2rem; border: 1px solid #e2e8f0; transition: 0.3s; }
+        .card-vdc:hover { border-color: var(--accent); transform: translateY(-2px); }
     </style>
 </head>
 <body class="flex min-h-screen">
 
-    <div id="examPhotoPopup" class="popup-overlay" onclick="closeExamPhotoPopup()">
-        <img id="popupExamImg" class="max-h-[95vh] max-w-[95vw] rounded-xl border-4 border-white shadow-2xl" src="">
-        <button class="absolute top-8 right-8 text-white text-4xl hover:scale-110 transition-transform"><i class="fas fa-times-circle"></i></button>
+    <div id="photoPopup" class="popup-overlay" onclick="this.style.display='none'">
+        <img id="popupImg" class="max-h-[90vh] max-w-[90vw] border-4 border-white rounded-xl shadow-2xl" src="">
     </div>
 
-    <aside id="sidebar" class="bg-[#0f172a] text-white flex flex-col sticky top-0 h-screen shadow-2xl z-50">
+    <aside id="sidebar" class="bg-slate-900 text-white flex flex-col sticky top-0 h-screen shadow-2xl z-50">
         <div class="p-6 border-b border-slate-800 flex items-center justify-between">
             <div class="flex items-center gap-3 overflow-hidden">
-                <div class="w-10 h-10 bg-blue-600 rounded-xl flex-shrink-0 flex items-center justify-center font-black text-xl">V</div>
-                <span class="logo-text font-bold text-lg uppercase tracking-widest">VDC Admin</span>
+                <div class="w-10 h-10 bg-blue-600 rounded-xl flex-shrink-0 flex items-center justify-center font-black">V</div>
+                <span class="nav-text font-bold text-lg uppercase tracking-widest logo-text">VDC Safety</span>
             </div>
-            <button onclick="toggleSidebar()" class="text-slate-500 hover:text-white"><i class="fas fa-bars"></i></button>
         </div>
         <nav class="flex-1 p-4 space-y-2 mt-4">
-            <button onclick="switchTab('tab-queue', this)" class="nav-btn active w-full flex items-center p-3 rounded-xl transition-all">
-                <i class="fas fa-bullhorn w-6 text-center"></i> <span class="nav-text ml-2 font-bold uppercase text-[11px]">Gọi nộp bài</span>
+            <button onclick="switchTab('tab-queue', this)" class="nav-btn active w-full flex items-center p-4 rounded-xl transition-all">
+                <i class="fas fa-bullhorn w-5"></i> <span class="nav-text ml-3 font-bold uppercase text-[10px]">Hàng đợi nộp bài</span>
             </button>
-            <button onclick="switchTab('tab-classes', this)" class="nav-btn w-full flex items-center p-3 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
-                <i class="fas fa-university w-6 text-center"></i> <span class="nav-text ml-2 font-bold uppercase text-[11px]">Lớp học</span>
+            <button onclick="switchTab('tab-attendance', this)" class="nav-btn w-full flex items-center p-4 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
+                <i class="fas fa-clipboard-check w-5"></i> <span class="nav-text ml-3 font-bold uppercase text-[10px]">Điểm danh & FaceID</span>
+            </button>
+            <button onclick="switchTab('tab-classes', this)" class="nav-btn w-full flex items-center p-4 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
+                <i class="fas fa-university w-5"></i> <span class="nav-text ml-3 font-bold uppercase text-[10px]">Quản lý Lớp học</span>
+            </button>
+            <button onclick="switchTab('tab-ai', this)" class="nav-btn w-full flex items-center p-4 rounded-xl text-slate-400 hover:bg-slate-800 transition-all">
+                <i class="fas fa-robot w-5"></i> <span class="nav-text ml-3 font-bold uppercase text-[10px]">AI Chấm điểm</span>
             </button>
         </nav>
     </aside>
 
-    <main class="flex-1 p-6 overflow-hidden">
+    <main class="flex-1 p-8 overflow-hidden">
         
         <section id="tab-queue" class="tab-content active">
             <div class="flex justify-between items-center mb-8">
-                <div>
-                    <h2 class="text-3xl font-black text-slate-900 uppercase tracking-tighter">Hàng đợi & Duyệt bài thi</h2>
-                    <p id="queue-count" class="text-blue-600 font-bold text-xs uppercase mt-1 italic">Đang tải danh sách...</p>
-                </div>
-                <div class="flex gap-4">
-                    <button onclick="toggleVoice()" id="voice-btn" class="px-6 py-3 bg-green-500 text-white rounded-2xl text-[11px] font-black uppercase shadow-lg">
-                        <i class="fas fa-volume-up mr-2"></i> Loa: BẬT
-                    </button>
-                </div>
+                <h2 class="text-3xl font-black text-slate-900 uppercase">📢 ĐIỀU PHỐI NỘP BÀI</h2>
+                <button onclick="toggleVoice()" id="voice-btn" class="px-6 py-3 bg-green-500 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg">LOA: BẬT</button>
             </div>
-
             <div id="call-area" class="hidden mb-10">
-                <div class="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 rounded-[3rem] p-10 text-white shadow-2xl flex items-center gap-10 border-4 border-white relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-4 opacity-5 text-[12rem]"><i class="fas fa-bullhorn"></i></div>
-                    
-                    <div class="relative group cursor-zoom-in" onclick="openExamPhotoPopup()">
-                        <img id="call-img" src="" class="w-48 h-64 object-cover rounded-[2.5rem] border-4 border-white/20 shadow-2xl bg-slate-700 z-10 transition-transform group-hover:scale-105">
-                        <div class="absolute inset-0 bg-black/40 rounded-[2.5rem] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                            <i class="fas fa-search-plus text-white text-3xl"></i>
-                        </div>
-                    </div>
-                    
-                    <div class="flex-1 z-10">
-                        <div class="flex items-center gap-3 mb-6">
-                            <span class="bg-blue-600 text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">Đang chờ duyệt bài</span>
-                            <span id="call-stt" class="text-blue-300 font-mono font-bold text-2xl"></span>
-                        </div>
-                        <h1 id="call-name" class="text-7xl font-black uppercase tracking-tighter leading-none mb-4">---</h1>
-                        <p id="call-info" class="text-2xl font-bold text-blue-200/50 uppercase italic tracking-wide">---</p>
-                        
-                        <div class="flex gap-4 mt-10">
-                            <button onclick="processSubmission('confirm')" class="flex-[3] py-6 bg-white text-slate-900 rounded-[1.5rem] font-black text-2xl shadow-2xl hover:bg-green-50 hover:scale-[1.02] active:scale-95 transition-all uppercase">
-                                <i class="fas fa-check-circle mr-3 text-green-600"></i> Bài OK, Mời Ký
-                            </button>
-                            <button onclick="processSubmission('retake')" class="flex-[2] py-6 bg-red-600/20 border-2 border-red-500 rounded-[1.5rem] font-black text-2xl text-red-100 hover:bg-red-600/40 hover:scale-[1.02] active:scale-95 transition-all uppercase">
-                                <i class="fas fa-camera mr-3"></i> Chụp lại
-                            </button>
-                            <button onclick="replayVoice()" class="px-8 py-6 bg-blue-600/30 border border-blue-400/50 rounded-[1.5rem] font-black text-2xl hover:bg-blue-600/50 transition-all">
-                                <i class="fas fa-redo-alt"></i>
-                            </button>
+                <div class="bg-gradient-to-br from-slate-950 to-blue-900 rounded-[3rem] p-10 text-white shadow-2xl flex items-center gap-10 border-4 border-white">
+                    <img id="call-img" onclick="openPhoto(this.src)" src="" class="w-48 h-64 object-cover rounded-[2rem] border-4 border-white/20 cursor-zoom-in">
+                    <div class="flex-1">
+                        <span id="call-stt" class="bg-blue-600 px-4 py-1 rounded-full text-[10px] font-black uppercase mb-4 inline-block tracking-tighter">STT: --</span>
+                        <h1 id="call-name" class="text-7xl font-black uppercase tracking-tighter leading-none mb-2">---</h1>
+                        <p id="call-info" class="text-xl font-bold text-blue-200/50 italic mb-8">---</p>
+                        <div class="flex gap-4">
+                            <button onclick="confirmAction('sign')" class="flex-[3] py-6 bg-white text-slate-900 rounded-2xl font-black text-2xl shadow-xl uppercase">Duyệt Ký Tên</button>
+                            <button onclick="confirmAction('retake')" class="flex-[2] py-6 bg-red-600/20 border-2 border-red-500 rounded-2xl font-black text-2xl text-red-100 uppercase">Chụp lại</button>
                         </div>
                     </div>
                 </div>
             </div>
+            <div id="queue-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        </section>
 
-            <div id="queue-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+        <section id="tab-attendance" class="tab-content">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-black text-slate-900 uppercase">🛡️ ĐIỂM DANH & FACE ID</h2>
+                <div class="flex gap-2">
+                    <button onclick="exportAttendance()" class="px-4 py-2 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase"><i class="fas fa-file-excel mr-2"></i>Xuất Excel</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-2 bg-white rounded-[2rem] shadow-sm border overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 border-b">
+                            <tr>
+                                <th class="p-4 text-[10px] font-black uppercase text-slate-400 text-center">STT</th>
+                                <th class="p-4 text-[10px] font-black uppercase text-slate-400">Học viên</th>
+                                <th class="p-4 text-[10px] font-black uppercase text-slate-400">Thời gian</th>
+                                <th class="p-4 text-[10px] font-black uppercase text-slate-400 text-center">Face ID</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-list"></tbody>
+                    </table>
+                </div>
+                <div class="bg-white rounded-[2rem] p-6 border shadow-sm">
+                    <h3 class="font-black text-xs uppercase mb-4 text-blue-600">Thống kê nhanh</h3>
+                    <div id="attendance-stats" class="space-y-4"></div>
+                </div>
+            </div>
         </section>
 
         <section id="tab-classes" class="tab-content">
-            <h2 class="text-2xl font-black text-slate-900 uppercase mb-6">Quản lý lớp huấn luyện</h2>
-            <div id="class-list-container" class="grid grid-cols-1 md:grid-cols-4 gap-4"></div>
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-black text-slate-900 uppercase">🏫 QUẢN LÝ LỚP HỌC</h2>
+                <button onclick="showAddClass()" class="px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase shadow-lg">+ Thêm Lớp Mới</button>
+            </div>
+            <div id="class-grid" class="grid grid-cols-1 md:grid-cols-4 gap-6"></div>
+        </section>
+
+        <section id="tab-ai" class="tab-content">
+            <h2 class="text-3xl font-black text-slate-900 uppercase mb-8">🤖 AI AUTO GRADER</h2>
+            <div class="max-w-2xl bg-white p-10 rounded-[3rem] shadow-sm border space-y-6 mx-auto">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-2">Drive Folder ID (Chứa bài thi)</label>
+                    <input type="text" id="folder-id" class="w-full p-5 bg-slate-50 border rounded-2xl font-bold focus:ring-2 ring-blue-500 outline-none" placeholder="Dán ID thư mục...">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 ml-2">Ảnh Đáp án mẫu</label>
+                    <input type="file" id="key-image" class="w-full p-4 border-2 border-dashed rounded-2xl cursor-pointer hover:bg-slate-50">
+                </div>
+                <button onclick="runAIGrader()" class="w-full py-6 bg-slate-900 text-white rounded-2xl font-black text-xl shadow-xl hover:bg-blue-600 transition-all uppercase">Bắt đầu chấm bài</button>
+            </div>
         </section>
 
     </main>
 
 <script>
-    // --- CẤU HÌNH FIREBASE ---
+    // --- FIREBASE SETUP ---
     const firebaseConfig = {
         apiKey: "AIzaSyCgbd-57H8-StCcBQPWyLWWAt4QAm-oVNI",
         authDomain: "hepc-ed95d.firebaseapp.com",
@@ -117,38 +141,27 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    let isVoiceActive = true;
     let currentQueue = [];
+    let isVoiceActive = true;
 
-    // --- NAVIGATION ---
+    // --- CHUYỂN TAB & KHỞI CHẠY ---
     function switchTab(id, btn) {
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.nav-btn').forEach(l => l.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        
         if(id === 'tab-queue') initQueue();
+        if(id === 'tab-attendance') initAttendance();
+        if(id === 'tab-classes') initClasses();
     }
-    function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
 
-    // --- POPUP ẢNH ---
-    function openExamPhotoPopup() {
-        if (!currentQueue[0]) return;
-        document.getElementById('popupExamImg').src = currentQueue[0].photo_exam;
-        document.getElementById('examPhotoPopup').style.display = 'flex';
-    }
-    function closeExamPhotoPopup() { document.getElementById('examPhotoPopup').style.display = 'none'; }
-
-    // --- LOGIC HÀNG ĐỢI ---
+    // --- PHÂN HỆ HÀNG ĐỢI ---
     function initQueue() {
         const today = new Date().toISOString().slice(0,10);
         db.ref(`submissions/${today}`).on('value', snap => {
             const data = snap.val() || {};
-            // Lọc ra những người chưa ký và không ở trạng thái chờ chụp lại (để không gọi người đang chụp lại lên bàn)
-            currentQueue = Object.values(data)
-                .filter(i => !i.signed && i.status !== "retake")
-                .sort((a,b) => a.timestamp - b.timestamp);
-            
-            document.getElementById('queue-count').innerText = `Hôm nay có ${currentQueue.length} học viên đang chờ duyệt bài`;
+            currentQueue = Object.values(data).filter(i => !i.signed && i.status !== 'retake').sort((a,b) => a.timestamp - b.timestamp);
             renderQueue();
         });
     }
@@ -157,75 +170,93 @@
         const area = document.getElementById('call-area');
         const grid = document.getElementById('queue-grid');
         grid.innerHTML = '';
-
         if(currentQueue.length > 0) {
             area.classList.remove('hidden');
             const top = currentQueue[0];
             document.getElementById('call-name').innerText = top.name;
             document.getElementById('call-stt').innerText = `STT: ${top.stt}`;
-            document.getElementById('call-info').innerText = `${top.dob} | ${top.unit || 'VDC Safety'}`;
-            document.getElementById('call-img').src = top.photo_exam || '';
-
-            currentQueue.slice(1).forEach((item, idx) => {
-                grid.innerHTML += `
-                    <div class="bg-white p-5 rounded-[2rem] border shadow-sm flex items-center gap-4 opacity-50">
-                        <div class="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-black text-slate-400">${idx+2}</div>
-                        <div class="flex-1 overflow-hidden">
-                            <div class="font-black text-slate-800 uppercase text-xs truncate">${item.name}</div>
-                            <div class="text-[9px] font-bold text-blue-500">STT: ${item.stt}</div>
-                        </div>
-                    </div>`;
+            document.getElementById('call-info').innerText = `${top.dob} | ${top.unit}`;
+            document.getElementById('call-img').src = top.photo_exam;
+            currentQueue.slice(1).forEach((item, i) => {
+                grid.innerHTML += `<div class="card-vdc p-4 flex items-center gap-4 opacity-50"><div class="font-black text-slate-300">${i+2}</div><div class="font-bold uppercase text-[10px] truncate">${item.name}</div></div>`;
             });
+        } else { area.classList.add('hidden'); grid.innerHTML = '<p class="col-span-full text-center text-slate-300 py-20 font-black uppercase">Đang chờ nộp bài...</p>'; }
+    }
+
+    async function confirmAction(type) {
+        if(currentQueue.length === 0) return;
+        const current = currentQueue[0];
+        const today = new Date().toISOString().slice(0,10);
+        if(type === 'sign') {
+            await db.ref(`submissions/${today}/${current.stt}`).update({ signed: true, status: 'completed' });
+            speak(`Xác nhận anh ${current.name} đã hoàn thành.`);
         } else {
-            area.classList.add('hidden');
-            grid.innerHTML = '<div class="col-span-full py-20 text-center font-black text-slate-300 uppercase tracking-widest text-xl">Đang chờ học viên nộp bài...</div>';
+            await db.ref(`submissions/${today}/${current.stt}`).update({ status: 'retake' });
+            speak(`Mời anh ${current.name} vui lòng chụp lại bài thi.`);
         }
     }
 
-    // --- XỬ LÝ DUYỆT BÀI & TỰ ĐỘNG GỌI ---
-    async function processSubmission(type) {
-        if(currentQueue.length === 0) return;
-        
-        const current = currentQueue[0];
-        const next = currentQueue.length > 1 ? currentQueue[1] : null;
+    // --- PHÂN HỆ ĐIỂM DANH & FACE ID ---
+    function initAttendance() {
         const today = new Date().toISOString().slice(0,10);
-
-        try {
-            if(type === 'confirm') {
-                // TRƯỜNG HỢP OK: Đánh dấu đã ký
-                await db.ref(`submissions/${today}/${current.stt}`).update({ signed: true, status: "completed" });
-                
-                let msg = `Xác nhận bài thi anh ${current.name} hợp lệ. Mời anh lên bàn giảng viên ký tên xác nhận. `;
-                if(next) msg += `Tiếp theo, mời anh ${next.name}, số thứ tự ${next.stt} lên nộp bài.`;
-                speak(msg);
-            } else {
-                // TRƯỜNG HỢP LỖI: Yêu cầu chụp lại
-                await db.ref(`submissions/${today}/${current.stt}`).update({ status: "retake" });
-                
-                let msg = `Bài thi của anh ${current.name} không đạt yêu cầu. Hệ thống đã gửi yêu cầu chụp lại về điện thoại của anh. `;
-                if(next) msg += `Mời học viên tiếp theo, anh ${next.name} lên nộp bài.`;
-                speak(msg);
-            }
-        } catch (e) { alert("Lỗi kết nối Firebase!"); }
+        db.ref(`attendance/${today}`).on('value', snap => {
+            const list = document.getElementById('attendance-list');
+            list.innerHTML = '';
+            let count = 0;
+            const data = snap.val() || {};
+            Object.values(data).forEach(att => {
+                count++;
+                list.innerHTML += `
+                    <tr class="border-b hover:bg-slate-50 transition-colors">
+                        <td class="p-4 text-center font-black text-slate-400">${att.stt}</td>
+                        <td class="p-4">
+                            <div class="font-black text-slate-800 uppercase text-[11px]">${att.name}</div>
+                            <div class="text-[9px] text-slate-400 font-bold">${att.unit}</div>
+                        </td>
+                        <td class="p-4 text-[10px] font-bold text-slate-500">${att.time}</td>
+                        <td class="p-4 text-center">
+                            <img src="${att.face_thumb}" onclick="openPhoto(this.src)" class="w-10 h-10 rounded-full border-2 border-white shadow-sm inline-block cursor-pointer hover:scale-110 transition-transform">
+                        </td>
+                    </tr>`;
+            });
+            document.getElementById('attendance-stats').innerHTML = `
+                <div class="p-4 bg-blue-50 rounded-2xl"><p class="text-[10px] font-black text-blue-400 uppercase">Học viên hiện diện</p><p class="text-3xl font-black text-blue-700">${count}</p></div>
+            `;
+        });
     }
 
-    // --- LOA THÔNG BÁO ---
-    function speak(txt) {
-        if(!isVoiceActive) return;
-        window.speechSynthesis.cancel();
-        const utter = new SpeechSynthesisUtterance(txt);
-        utter.lang = 'vi-VN'; utter.rate = 0.9;
-        window.speechSynthesis.speak(utter);
+    // --- PHÂN HỆ LỚP HỌC ---
+    function initClasses() {
+        db.ref('classes').on('value', snap => {
+            const grid = document.getElementById('class-grid');
+            grid.innerHTML = '';
+            const data = snap.val() || {};
+            Object.keys(data).forEach(id => {
+                const cls = data[id];
+                grid.innerHTML += `
+                    <div class="card-vdc p-6 flex flex-col justify-between">
+                        <div>
+                            <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400 mb-4"><i class="fas fa-graduation-cap"></i></div>
+                            <h3 class="font-black text-[11px] uppercase text-slate-800 leading-tight mb-2">${cls.name}</h3>
+                            <p class="text-[9px] font-bold text-slate-400 uppercase">${Object.keys(cls.students || {}).length} Học viên</p>
+                        </div>
+                        <button onclick="activateSession('${id}', '${cls.name}')" class="mt-6 w-full py-3 bg-blue-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg active:scale-95 transition-all">Mở Lớp</button>
+                    </div>`;
+            });
+        });
     }
-    function toggleVoice() {
-        isVoiceActive = !isVoiceActive;
-        const btn = document.getElementById('voice-btn');
-        btn.className = isVoiceActive ? "px-6 py-3 bg-green-500 text-white rounded-2xl text-[11px] font-black uppercase shadow-lg" : "px-6 py-3 bg-slate-400 text-white rounded-2xl text-[11px] font-black uppercase shadow-lg";
-        btn.innerHTML = isVoiceActive ? '<i class="fas fa-volume-up mr-2"></i> Loa: BẬT' : '<i class="fas fa-volume-mute mr-2"></i> Loa: TẮT';
-    }
-    function replayVoice() { if(currentQueue[0]) speak(`Mời học viên ${currentQueue[0].name}, số thứ tự ${currentQueue[0].stt} lên nộp bài thi.`); }
 
-    window.onload = () => { initQueue(); };
+    async function activateSession(id, name) {
+        await db.ref('current_session').set({ source: id, class: name, timestamp: Date.now() });
+        alert(`🔔 ĐÃ MỞ LỚP: ${name}`);
+    }
+
+    // --- TIỆN ÍCH ---
+    function speak(t) { if(isVoiceActive) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang='vi-VN'; u.rate=0.9; window.speechSynthesis.speak(u); } }
+    function toggleVoice() { isVoiceActive = !isVoiceActive; document.getElementById('voice-btn').classList.toggle('bg-slate-400'); }
+    function openPhoto(url) { document.getElementById('popupImg').src = url; document.getElementById('photoPopup').style.display='flex'; }
+
+    window.onload = initQueue;
 </script>
 </body>
 </html>
