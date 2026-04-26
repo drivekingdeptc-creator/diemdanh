@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VDC SAFETY ADMIN v6.1 - FULL</title>
+    <title>VDC SAFETY ADMIN v6.2 - FULL OPTION</title>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -26,7 +26,7 @@
 
     <aside class="bg-slate-900 text-slate-400 flex flex-col h-screen w-[280px] shadow-2xl shrink-0">
         <div class="p-8 border-b border-slate-800 text-center">
-            <h1 class="font-black text-white text-lg tracking-tighter uppercase">VDC Safety <span class="text-blue-500 text-xs">v6.1</span></h1>
+            <h1 class="font-black text-white text-lg tracking-tighter uppercase">VDC Safety <span class="text-blue-500 text-xs">v6.2</span></h1>
         </div>
         <nav class="flex-1 p-4 space-y-2 mt-4">
             <button onclick="switchTab('tab-classes', this)" class="nav-btn active w-full flex items-center p-4 rounded-2xl text-left transition-all">
@@ -105,7 +105,7 @@
                     <span id="call-stt" class="bg-blue-600 px-4 py-1 rounded-full text-[10px] font-black uppercase mb-4 inline-block">STT: --</span>
                     <h1 id="call-name" class="text-7xl font-black uppercase tracking-tighter mb-4">---</h1>
                     <div class="flex gap-4">
-                        <button onclick="confirmAction('sign')" class="flex-[3] py-6 bg-white text-slate-900 rounded-2xl font-black text-2xl uppercase">DUYỆT - KÝ TÊN</button>
+                        <button onclick="confirmAction('sign')" id="btn-approve" class="flex-[3] py-6 bg-white text-slate-900 rounded-2xl font-black text-2xl uppercase shadow-lg">DUYỆT - KÝ TÊN</button>
                         <button onclick="confirmAction('retake')" class="flex-[2] py-6 bg-red-600/20 border-2 border-red-500 rounded-2xl font-black text-2xl text-red-100 uppercase">CHỤP LẠI</button>
                     </div>
                 </div>
@@ -128,6 +128,7 @@
     <div id="importModal" class="popup-overlay"><div class="bg-white p-10 rounded-[3rem] w-full max-w-xl shadow-2xl"><h2 class="text-xl font-black uppercase mb-4 text-slate-900">Dán từ Excel</h2><textarea id="import-area" rows="8" class="w-full p-6 bg-slate-50 border-2 border-dashed rounded-3xl font-mono text-xs mb-6 outline-none" placeholder="1	Nguyễn Văn A	1990	Công ty..."></textarea><div class="flex gap-4"><button onclick="processImport()" class="flex-1 py-5 bg-blue-600 text-white rounded-2xl font-black uppercase">Xử lý</button><button onclick="closeImportModal()" class="flex-1 py-5 bg-slate-100 text-slate-400 rounded-2xl font-black uppercase">Hủy</button></div></div></div>
 
 <script>
+    // CẤU HÌNH TỪ ANH
     const GAS_URL = "https://script.google.com/macros/s/AKfycbxzLK_ZNVHoMTInV_Mo-_-q6fMUYlR1uLElrev9h-HwLXg70NVZDyX0veXPDmDmAVk/exec";
     const firebaseConfig = { databaseURL: "https://hepc-ed95d-default-rtdb.firebaseio.com" };
     firebase.initializeApp(firebaseConfig);
@@ -187,7 +188,6 @@
             });
         });
     }
-    async function resetFaceID(stt) { if(confirm("Gỡ Face ID?")) await db.ref(`attendance/${new Date().toISOString().slice(0,10)}/${stt}`).remove(); }
 
     // BƯỚC 3: NỘP BÀI & DROPLIST
     function initFolderDroplist() {
@@ -200,6 +200,7 @@
     }
     function updateStorageFolder(id) { if(id) { db.ref('current_session').update({ storage_id: id }); document.getElementById('folder-id').value = id; } }
     function confirmCreateFolder() { fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ action: "createFolder" }) }); alert("Đang tạo..."); }
+    
     function initQueue() {
         const today = new Date().toISOString().slice(0,10);
         db.ref(`submissions/${today}`).on('value', snap => {
@@ -216,10 +217,43 @@
             document.getElementById('call-img').src = t.photo_exam;
         } else area.classList.add('hidden');
     }
+
+    // HÀM QUAN TRỌNG: DUYỆT VÀ LƯU DRIVE
     async function confirmAction(type) {
-        if(currentQueue.length === 0) return; const c = currentQueue[0], today = new Date().toISOString().slice(0,10);
-        if(type === 'sign') { await db.ref(`submissions/${today}/${c.stt}`).update({ signed: true }); speak(`Xác nhận anh ${c.name} ký tên.`); }
-        else { await db.ref(`submissions/${today}/${c.stt}`).update({ status: 'retake' }); speak(`Anh ${c.name} chụp lại bài.`); }
+        if(currentQueue.length === 0) return;
+        const c = currentQueue[0], today = new Date().toISOString().slice(0,10);
+        const storageId = document.getElementById('folder-select').value;
+
+        if(type === 'sign') {
+            if(!storageId) { alert("Anh chưa chọn thư mục lưu bài ở Bước 3!"); return; }
+            
+            const btn = document.getElementById('btn-approve');
+            btn.innerText = "ĐANG LƯU DRIVE...";
+            btn.disabled = true;
+
+            // Gọi GAS để bốc ảnh từ Firebase ném vào Drive
+            fetch(GAS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                body: JSON.stringify({
+                    action: "saveToDrive",
+                    params: {
+                        folderId: storageId,
+                        photoData: c.photo_exam,
+                        stt: c.stt,
+                        name: c.name
+                    }
+                })
+            });
+
+            await db.ref(`submissions/${today}/${c.stt}`).update({ signed: true });
+            btn.innerText = "DUYỆT - KÝ TÊN";
+            btn.disabled = false;
+            speak(`Xác nhận anh ${c.name} ký tên.`);
+        } else {
+            await db.ref(`submissions/${today}/${c.stt}`).update({ status: 'retake' });
+            speak(`Anh ${c.name} chụp lại bài.`);
+        }
     }
 
     // UTILS
