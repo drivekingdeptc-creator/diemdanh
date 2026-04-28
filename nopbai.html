@@ -2,116 +2,173 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VDC SAFETY - NỘP BÀI THEO STT</title>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-        import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyD0g2jxFOY5KQGZeZWyJf0SDxA91sitpxE",
-            authDomain: "chamdiemonline-898b1.firebaseapp.com",
-            projectId: "chamdiemonline-898b1",
-            databaseURL: "https://chamdiemonline-898b1-default-rtdb.firebaseio.com/",
-            appId: "1:1073615877091:web:b70fa88f2cf740085fe6d6"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        
-        let currentClassData = null;
-        let currentFolderId = "";
-        let typingTimer;
-
-        // 1. LẤY THÔNG TIN LỚP ĐANG MỞ TỪ FIREBASE
-        onValue(ref(db, 'control'), (snap) => {
-            const ctrl = snap.val();
-            if (ctrl && ctrl.status === "running") {
-                currentFolderId = ctrl.current_folder_id;
-                // Lấy danh sách học viên của lớp này
-                get(ref(db, `current_results/${ctrl.current_folder_name}`)).then((s) => {
-                    currentClassData = s.val();
-                });
-            }
-        });
-
-        // 2. XỬ LÝ NHẬP STT VỚI KHOẢNG TRỄ 1.5S
-        window.handleSTTInput = function() {
-            clearTimeout(typingTimer);
-            const stt = document.getElementById('sttInput').value;
-            const area = document.getElementById('displayArea');
-            area.style.display = 'none';
-            document.getElementById('uploadSection').style.display = 'none';
-
-            if (stt && currentClassData) {
-                document.getElementById('loader').style.display = 'block';
-                typingTimer = setTimeout(() => {
-                    document.getElementById('loader').style.display = 'none';
-                    if (currentClassData[stt]) {
-                        document.getElementById('studentName').innerText = currentClassData[stt].name;
-                        area.style.display = 'block';
-                    } else {
-                        alert("Không tìm thấy học viên có STT này trong lớp hiện tại!");
-                    }
-                }, 1500);
-            }
-        };
-
-        window.showUpload = function() {
-            document.getElementById('uploadSection').style.display = 'block';
-            document.getElementById('confirmBtn').style.display = 'none';
-            document.getElementById('sttInput').disabled = true;
-        };
-
-        window.performUpload = function() {
-            const file = document.getElementById('fileInput').files[0];
-            const stt = document.getElementById('sttInput').value;
-            const name = document.getElementById('studentName').innerText;
-            if(!file) return alert("Vui lòng chọn ảnh bài làm!");
-
-            const fileName = `${stt}_${name}.jpg`;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const btn = document.getElementById('btnSubmit');
-                btn.innerText = "⏳ Đang nộp bài...";
-                btn.disabled = true;
-                google.script.run.withSuccessHandler(msg => {
-                    alert(msg);
-                    window.location.reload();
-                }).handleFileUpload(e.target.result, fileName, currentFolderId);
-            };
-            reader.readAsDataURL(file);
-        };
-    </script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VDC SAFETY - NỘP BÀI NHANH v2.1</title>
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .card { background: white; width: 100%; max-width: 400px; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
-        input[type="number"] { width: 70%; padding: 15px; font-size: 30px; text-align: center; border: 2px solid #e2e8f0; border-radius: 15px; margin-bottom: 10px; }
-        .student-box { background: #ebf8ff; padding: 20px; border-radius: 15px; margin-top: 15px; border: 1px solid #bee3f8; }
-        .btn-green { background: #38a169; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; width: 100%; cursor: pointer; }
-        .btn-blue { background: #3182ce; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: bold; width: 100%; margin-top: 15px; cursor: pointer; }
-        .loader { display: none; margin: 10px auto; border: 3px solid #f3f3f3; border-top: 3px solid #3182ce; border-radius: 50%; width: 25px; height: 25px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { background: #f1f5f9; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .app-container { width: 95%; max-width: 420px; background: white; border-radius: 35px; box-shadow: 0 15px 45px rgba(0,0,0,0.12); overflow: hidden; max-height: 98vh; display: flex; flex-direction: column; }
+        #video-container { position: relative; width: 100%; height: 300px; margin: 10px auto; background: #000; border-radius: 20px; overflow: hidden; border: 4px solid #fff; }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .btn-vdc { background: #1e293b; color: white; transition: 0.3s; }
+        .btn-vdc:disabled { opacity: 0.3; }
+        .input-vdc { border: 2px solid #e2e8f0; border-radius: 15px; padding: 12px; font-weight: 900; text-align: center; font-size: 1.2rem; color: #1e293b; outline: none; transition: 0.3s; }
+        .input-vdc:focus { border-color: #3b82f6; background: #eff6ff; }
     </style>
 </head>
 <body>
-    <div class="card">
-        <h2 style="color:#2d3748; margin-bottom:10px;">VDC SAFETY</h2>
-        <p style="color:#718096; font-size:14px;">Nhập số thứ tự để nộp bài</p>
-        
-        <input type="number" id="sttInput" placeholder="00" oninput="handleSTTInput()">
-        <div id="loader" class="loader"></div>
 
-        <div id="displayArea" style="display:none;" class="student-box">
-            <p style="margin:0; color:#4a5568;">Bạn là học viên:</p>
-            <h3 id="studentName" style="color:#2b6cb0; margin:10px 0;">...</h3>
-            <button id="confirmBtn" class="btn-green" onclick="showUpload()">ĐÚNG, LÀ TÔI</button>
+<div class="app-container">
+    <div id="session-info" class="bg-slate-900 text-white p-3 text-[10px] text-center font-black uppercase tracking-widest text-blue-400 font-mono italic">Hệ thống nộp bài VDC</div>
+
+    <div class="p-6 text-center flex-1 flex flex-col justify-between">
+        
+        <div id="search-section" class="space-y-6">
+            <div class="space-y-2">
+                <h1 class="text-xl font-black text-slate-800 uppercase tracking-tighter">Nộp bài kiểm tra</h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">Vui lòng nhập số thứ tự trong danh sách</p>
+            </div>
+            
+            <div class="flex flex-col gap-4">
+                <input type="number" id="inputSTT" class="input-vdc" placeholder="STT CỦA ANH/CHỊ" oninput="fetchName(this.value)">
+                <div id="name-display" class="hidden p-4 bg-blue-50 border-2 border-blue-200 rounded-2xl animate-pulse">
+                    <p class="text-[10px] text-blue-400 font-black uppercase tracking-widest">Học viên xác nhận:</p>
+                    <p id="student-name" class="text-lg font-black text-blue-700 uppercase tracking-tighter"></p>
+                </div>
+            </div>
+
+            <button id="btnGoToCapture" onclick="showCapture()" disabled class="btn-vdc w-full py-5 rounded-[2rem] font-black text-lg uppercase shadow-2xl">Bắt đầu chụp bài</button>
         </div>
 
-        <div id="uploadSection" style="display:none;">
-            <input type="file" id="fileInput" accept="image/*" style="margin:15px 0;">
-            <button id="btnSubmit" class="btn-blue" onclick="performUpload()">🚀 XÁC NHẬN NỘP BÀI</button>
+        <div id="capture-section" class="hidden space-y-4">
+            <div class="flex justify-between items-center px-2">
+                <span class="text-[10px] font-black text-slate-400 uppercase">Chụp ảnh bài làm</span>
+                <span id="display-stt" class="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black">STT: --</span>
+            </div>
+            
+            <div id="video-container">
+                <video id="videoExam" autoplay muted playsinline></video>
+            </div>
+            
+            <p class="text-[9px] text-slate-400 font-bold italic">Hãy canh bài thi nằm gọn trong khung hình và rõ nét</p>
+            
+            <div class="space-y-3">
+                <button onclick="takePhoto()" class="bg-blue-600 text-white w-full py-5 rounded-[2.5rem] font-black text-xl uppercase shadow-2xl hover:bg-blue-700 transition-all">Nộp bài ngay</button>
+                <button onclick="location.reload()" class="text-[10px] font-bold text-slate-400 uppercase underline">Quay lại nhập STT</button>
+            </div>
+        </div>
+
+        <div id="result-section" class="hidden py-10 space-y-6">
+            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto text-white text-3xl shadow-xl border-4 border-white"><i class="fas fa-check"></i></div>
+            <div>
+                <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tighter">Đã nộp bài xong!</h2>
+                <p class="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">Anh/Chị có thể về chỗ hoặc thoát trình duyệt.</p>
+            </div>
+            <button onclick="location.reload()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-xs">Nộp cho người khác</button>
         </div>
     </div>
+</div>
+
+<footer class="mt-6 mb-4 text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">VDC Safety v2.1 | <span class="text-slate-800">Mr. An Toàn</span></footer>
+
+<script>
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbxzLK_ZNVHoMTInV_Mo-_-q6fMUYlR1uLElrev9h-HwLXg70NVZDyX0veXPDmDmAVk/exec";
+    const firebaseConfig = { databaseURL: "https://hepc-ed95d-default-rtdb.firebaseio.com" };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let session, currentStudent, stream;
+
+    // Lấy thông tin lớp học đang mở
+    db.ref('current_session').on('value', snap => {
+        session = snap.val();
+        if(session) console.log("Lớp hiện tại: " + session.class);
+    });
+
+    async function fetchName(stt) {
+        if(!stt || !session) return;
+        const snap = await db.ref(`classes/${session.source}/students/${stt}`).once('value');
+        const student = snap.val();
+        
+        const display = document.getElementById('name-display');
+        const btn = document.getElementById('btnGoToCapture');
+        
+        if(student) {
+            currentStudent = student;
+            document.getElementById('student-name').innerText = student.name;
+            display.classList.remove('hidden');
+            btn.disabled = false;
+        } else {
+            display.classList.add('hidden');
+            btn.disabled = true;
+        }
+    }
+
+    async function showCapture() {
+        document.getElementById('search-section').classList.add('hidden');
+        document.getElementById('capture-section').classList.remove('hidden');
+        document.getElementById('display-stt').innerText = "STT: " + currentStudent.stt;
+        
+        const video = document.getElementById('videoExam');
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+    }
+
+    async function takePhoto() {
+        const video = document.getElementById('videoExam');
+        const canvas = document.createElement('canvas');
+        canvas.width = 600; canvas.height = 800;
+        canvas.getContext('2d').drawImage(video, 0, 0, 600, 800);
+        const photoData = canvas.toDataURL('image/jpeg', 0.8);
+        
+        // Hiện trạng thái đang xử lý
+        document.getElementById('capture-section').innerHTML = `
+            <div class="py-20 flex flex-col items-center gap-4">
+                <div class="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-blue-600 font-black text-sm uppercase italic">Đang nộp bài... Vui lòng đợi</p>
+            </div>`;
+        
+        // 1. Gửi về Google Drive qua Apps Script
+        const payload = {
+            action: "saveToDrive",
+            params: {
+                folderId: session.storage_id,
+                stt: currentStudent.stt,
+                name: removeAccents(currentStudent.name),
+                photoData: photoData
+            }
+        };
+
+        try {
+            await fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) });
+            
+            // 2. Cập nhật Realtime Database để Admin thấy bài ngay
+            const today = new Date().toISOString().slice(0,10);
+            await db.ref(`submissions/${today}/${currentStudent.stt}`).set({
+                name: currentStudent.name,
+                stt: currentStudent.stt,
+                photo_exam: photoData,
+                timestamp: Date.now(),
+                signed: false
+            });
+
+            // Tắt camera
+            if(stream) stream.getTracks().forEach(track => track.stop());
+
+            document.getElementById('capture-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+        } catch (e) {
+            alert("Lỗi nộp bài: " + e.message);
+            location.reload();
+        }
+    }
+
+    function removeAccents(str) {
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D');
+    }
+</script>
 </body>
 </html>
