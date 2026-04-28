@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VDC SAFETY - AI FACE ID v1.6.6</title>
+    <title>VDC SAFETY - AI FACE ID v1.6.7</title>
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root { --vdc-blue: #1e293b; }
         body { background: #f8fafc; font-family: 'Inter', sans-serif; overflow: hidden; }
         .app-container { max-width: 450px; width: 100%; background: white; border-radius: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.1); margin: auto; overflow: hidden; }
-        #video-container { position: relative; width: 300px; height: 350px; margin: 15px auto; background: #000; border-radius: 40px; overflow: hidden; border: 4px solid #fff; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        #video-container { position: relative; width: 300px; height: 350px; margin: 15px auto; background: #000; border-radius: 40px; overflow: hidden; border: 4px solid #fff; }
         video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
-        .face-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 75%; height: 80%; border: 4px dashed rgba(255, 255, 255, 0.4); border-radius: 50%; z-index: 20; transition: 0.2s; }
+        canvas { position: absolute; top: 0; left: 0; transform: scaleX(-1); }
+        .face-guide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70%; height: 80%; border: 4px dashed rgba(255, 255, 255, 0.4); border-radius: 50%; z-index: 20; }
         .face-detected { border-color: #10b981; border-style: solid; background: rgba(16, 185, 129, 0.1); }
         .btn-vdc { background: #1e293b; color: white; transition: 0.2s; }
         .btn-vdc:disabled { opacity: 0.3; }
@@ -24,34 +24,35 @@
 <body class="p-4 flex flex-col items-center justify-center min-h-screen">
 
 <div class="app-container">
-    <div id="session-info" class="bg-slate-900 text-white p-3 text-[10px] text-center font-black uppercase tracking-widest text-blue-400">Khởi tạo AI...</div>
+    <div id="session-info" class="bg-slate-900 text-white p-3 text-[10px] text-center font-black uppercase text-blue-400">Đang khởi tạo...</div>
 
     <div class="p-6 text-center">
-        <p id="loading-msg" class="text-[10px] text-red-500 font-black animate-pulse mb-4 uppercase">⌛ Đang nạp bộ lọc siêu tốc...</p>
+        <p id="loading-msg" class="text-[10px] text-red-500 font-black animate-pulse mb-4 uppercase">⌛ Đang nạp dữ liệu bảo mật...</p>
 
         <div id="scanner-section">
             <div id="video-container">
                 <video id="video" autoplay muted playsinline></video>
+                <canvas id="overlay"></canvas>
                 <div class="face-guide" id="faceGuide"></div>
             </div>
             <p id="scan-status" class="text-[10px] font-black text-slate-400 mb-6 tracking-widest uppercase italic">ÁP MẶT VÀO KHUNG HÌNH</p>
-            <button class="btn-vdc w-full py-5 rounded-[2rem] font-black text-lg uppercase shadow-2xl" id="btnCapture" onclick="checkFace()" disabled>XÁC NHẬN</button>
+            <button class="btn-vdc w-full py-5 rounded-[2rem] font-black text-lg uppercase" id="btnCapture" onclick="checkFace()" disabled>XÁC NHẬN</button>
         </div>
 
-        <div id="search-section" class="hidden mt-4 p-4 border-t border-dashed border-slate-200 text-left">
+        <div id="search-section" class="hidden mt-4 p-4 border-t border-dashed text-left">
             <p class="text-[10px] text-slate-500 mb-4 italic text-center font-bold uppercase">Nhập tên không dấu để tìm hồ sơ</p>
-            <input type="text" id="inputName" class="w-full p-5 bg-slate-50 border-2 rounded-2xl mb-3 font-black text-slate-700 uppercase outline-none focus:border-blue-500" placeholder="VÍ DỤ: NGUYEN VAN A">
+            <input type="text" id="inputName" class="w-full p-5 bg-slate-50 border-2 rounded-2xl mb-3 font-black text-slate-700 uppercase outline-none" placeholder="VÍ DỤ: NGUYEN VAN A">
             <button class="w-full py-4 bg-slate-800 text-white rounded-2xl font-black text-xs uppercase" onclick="searchStudent()">TÌM HỒ SƠ</button>
         </div>
 
         <div id="verify-section" class="hidden mt-4 bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100 text-left">
             <img id="preview-photo" class="w-24 h-32 object-cover rounded-2xl border-4 border-white shadow-xl mx-auto mb-6">
             <div class="grid grid-cols-2 gap-4 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-                <div class="col-span-1">STT<input type="text" id="c1" disabled class="w-full mt-1 p-2 bg-slate-100 rounded-lg font-black text-slate-800 text-center"></div>
-                <div class="col-span-1">Học viên<input type="text" id="c2" disabled class="w-full mt-1 p-2 bg-slate-100 rounded-lg font-black text-slate-800 uppercase"></div>
+                <div class="col-span-1">STT<input type="text" id="c1" disabled class="w-full mt-1 p-2 bg-slate-100 rounded-lg text-center"></div>
+                <div class="col-span-1">Học viên<input type="text" id="c2" disabled class="w-full mt-1 p-2 bg-slate-100 rounded-lg uppercase"></div>
                 <div class="col-span-2">Đơn vị<input type="text" id="c7" class="w-full mt-1 p-3 bg-white border rounded-xl text-slate-700 font-black"></div>
             </div>
-            <button class="w-full mt-6 py-5 bg-green-600 text-white rounded-[2rem] font-black text-lg uppercase shadow-2xl" onclick="saveFinal()">XÁC NHẬN ĐĂNG KÝ</button>
+            <button class="w-full mt-6 py-5 bg-green-600 text-white rounded-[2rem] font-black text-lg uppercase" onclick="saveFinal()">XÁC NHẬN ĐĂNG KÝ</button>
         </div>
 
         <div id="result-screen" class="hidden mt-4 bg-white p-8 rounded-[3rem] shadow-2xl border border-green-50 text-center">
@@ -63,8 +64,6 @@
         </div>
     </div>
 </div>
-
-<footer class="mt-6 text-[9px] text-slate-400 uppercase tracking-[0.3em] font-black">VDC Safety v1.6.6 | Mr. An Toàn</footer>
 
 <script>
     const firebaseConfig = {
@@ -86,17 +85,15 @@
     async function initAI() {
         const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
         try {
-            faceapi.env.monkeyPatch({ fetch: (...args) => fetch(...args, { cache: 'force-cache' }) });
-            // SỬ DỤNG TINY FACE DETECTOR CHO TỐC ĐỘ NHANH HƠN
             await Promise.all([
-                faceapi.nets.tinyFaceDetector.loadFromUri(URL),
+                faceapi.nets.ssdMobilenetv1.loadFromUri(URL),
                 faceapi.nets.faceLandmark68Net.loadFromUri(URL),
                 faceapi.nets.faceRecognitionNet.loadFromUri(URL)
             ]);
             document.getElementById('loading-msg').classList.add('hidden');
             db.ref('current_session').on('value', async snap => {
                 session = snap.val();
-                if(session && session.source) {
+                if(session) {
                     document.getElementById('session-info').innerText = "LỚP: " + session.class;
                     await loadFaceDB();
                 }
@@ -110,13 +107,13 @@
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
             video.srcObject = stream;
-            isDetecting = true;
             video.onloadedmetadata = () => {
                 video.play();
+                const canvas = document.getElementById('overlay');
+                faceapi.matchDimensions(canvas, { width: 300, height: 350 });
                 setInterval(async () => {
-                    if(!isDetecting) return;
-                    // SỬ DỤNG TINY DETECTOR ĐỂ QUÉT CỰC NHANH
-                    const det = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptor();
+                    const det = await faceapi.detectSingleFace(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.5 })).withFaceLandmarks().withFaceDescriptor();
+                    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
                     if(det) {
                         lastDescriptor = det.descriptor;
                         document.getElementById('btnCapture').disabled = false;
@@ -129,7 +126,7 @@
                         document.getElementById('scan-status').innerText = "🔍 ĐANG TÌM MẶT...";
                         document.getElementById('scan-status').classList.replace('text-green-600', 'text-slate-400');
                     }
-                }, 200); // QUÉT MỖI 200ms (NHANH GẤP 3 LẦN BẢN CŨ)
+                }, 500);
             };
         } catch (e) { document.getElementById('loading-msg').innerText = "❌ LỖI CAMERA!"; }
     }
@@ -139,9 +136,11 @@
         const data = snap.val() || {};
         const labeled = [];
         for (let k in data) {
-            if (data[k] && data[k].descriptor) labeled.push(new faceapi.LabeledFaceDescriptors(data[k].stt.toString(), [new Float32Array(data[k].descriptor)]));
+            if (data[k] && data[k].descriptor) {
+                labeled.push(new faceapi.LabeledFaceDescriptors(data[k].stt.toString(), [new Float32Array(data[k].descriptor)]));
+            }
         }
-        if (labeled.length > 0) faceMatcher = new faceapi.FaceMatcher(labeled, 0.45);
+        if (labeled.length > 0) faceMatcher = new faceapi.FaceMatcher(labeled, 0.42);
     }
 
     async function checkFace() {
@@ -150,6 +149,7 @@
         canvas.width = 450; canvas.height = 600;
         canvas.getContext('2d').drawImage(v, 0, 0, 450, 600);
         capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
+        
         if(faceMatcher && lastDescriptor) {
             const match = faceMatcher.findBestMatch(lastDescriptor);
             if(match.label !== 'unknown') {
@@ -187,7 +187,6 @@
     async function saveAttendance(st) {
         const today = new Date().toISOString().slice(0,10);
         await db.ref(`attendance/${today}/${st.stt}`).set({ name: st.name, timestamp: Date.now(), face_thumb: capturedPhoto });
-        isDetecting = false;
         document.getElementById('scanner-section').classList.add('hidden');
         document.getElementById('verify-section').classList.add('hidden');
         document.getElementById('result-screen').classList.remove('hidden');
