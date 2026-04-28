@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VDC SAFETY - AI FACE ID v1.6.3</title>
+    <title>VDC SAFETY - AI FACE ID v1.6.4</title>
     <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
@@ -29,14 +29,14 @@
 <body class="p-4 flex flex-col items-center justify-center min-h-screen">
 
 <div class="app-container shadow-2xl">
-    <div id="session-info" class="bg-slate-900 text-white p-4 text-[10px] tracking-wider text-center uppercase font-bold border-b border-slate-700 italic text-blue-400 font-mono">Đang đồng bộ AI...</div>
+    <div id="session-info" class="bg-slate-900 text-white p-4 text-[10px] tracking-wider text-center uppercase font-bold border-b border-slate-700 italic text-blue-400 font-mono">Đang đồng bộ dữ liệu...</div>
 
     <div class="p-6 text-center">
         <div class="flex items-center justify-center gap-2 mb-2">
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-black text-white text-sm shadow-lg">V</div>
             <h1 class="text-xl font-black text-slate-800 tracking-tighter uppercase italic">VDC Safety AI</h1>
         </div>
-        <p id="loading-msg" class="text-xs text-red-500 font-bold animate-pulse mb-4 italic uppercase tracking-widest">⌛ ĐANG KHỞI CHẠY BỘ LỌC BẢO MẬT...</p>
+        <p id="loading-msg" class="text-[10px] text-red-500 font-bold animate-pulse mb-4 uppercase tracking-widest italic">⌛ Đang nạp bộ não AI...</p>
 
         <div id="scanner-section">
             <div id="video-container">
@@ -45,13 +45,13 @@
                 <canvas id="overlay"></canvas>
                 <div class="face-guide" id="faceGuide"></div>
             </div>
-            <p id="scan-status" class="text-xs font-black text-slate-400 mb-4 tracking-widest uppercase italic">ÁP MẶT VÀO HÌNH BẦU DỤC</p>
-            <button class="btn-vdc w-full py-5 rounded-3xl font-black text-lg shadow-xl uppercase tracking-tighter" id="btnCapture" onclick="checkFace()" disabled>XÁC NHẬN ĐIỂM DANH</button>
+            <p id="scan-status" class="text-xs font-black text-slate-400 mb-4 tracking-widest uppercase italic">ÁP MẶT VÀO KHUNG HÌNH</p>
+            <button class="btn-vdc w-full py-5 rounded-3xl font-black text-lg shadow-xl uppercase" id="btnCapture" onclick="checkFace()" disabled>XÁC NHẬN ĐIỂM DANH</button>
         </div>
 
         <div id="search-section" class="hidden mt-4 pt-6 border-t border-dashed border-slate-200 text-left fade-in">
-            <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-4 text-[11px] text-orange-600 font-black uppercase italic tracking-tighter">CHƯA NHẬN DIỆN ĐƯỢC MẶT</div>
-            <p class="text-[10px] text-slate-500 mb-4 italic text-center font-bold">Anh/Chị nhập họ tên <b>không dấu</b> để tìm hồ sơ.</p>
+            <div class="bg-orange-50 border-l-4 border-orange-500 p-4 mb-4 text-[11px] text-orange-600 font-black uppercase italic">AI CHƯA NHẬN DIỆN ĐƯỢC MẶT</div>
+            <p class="text-[10px] text-slate-500 mb-4 italic text-center font-bold">Vui lòng nhập họ tên <b>không dấu</b> để tìm hồ sơ.</p>
             <input type="text" id="inputName" class="w-full p-5 bg-slate-50 border-2 border-slate-200 rounded-2xl mb-3 outline-none font-black text-slate-700 uppercase focus:border-blue-500 transition-all" placeholder="VÍ DỤ: NGUYEN VAN A">
             <button class="w-full py-4 bg-slate-800 text-white rounded-2xl font-black text-xs shadow-lg uppercase tracking-widest" onclick="searchStudent()">TÌM HỒ SƠ</button>
         </div>
@@ -66,7 +66,7 @@
                 <div>Ngày sinh<input type="text" id="c4" class="w-full mt-1 p-3 bg-white border rounded-xl text-slate-700 font-black italic"></div>
                 <div>Đơn vị<input type="text" id="c7" class="w-full mt-1 p-3 bg-white border rounded-xl text-slate-700 font-black italic"></div>
             </div>
-            <button class="w-full mt-8 py-5 bg-green-600 text-white rounded-[2rem] font-black text-lg uppercase shadow-2xl tracking-tighter" onclick="saveFinal()">XÁC NHẬN ĐĂNG KÝ MẶT</button>
+            <button class="w-full mt-8 py-5 bg-green-600 text-white rounded-[2rem] font-black text-lg uppercase shadow-2xl" onclick="saveFinal()">XÁC NHẬN ĐĂNG KÝ MẶT</button>
         </div>
 
         <div id="result-screen" class="hidden mt-4 fade-in">
@@ -75,13 +75,13 @@
                 <img id="res-photo" class="w-32 h-44 object-cover rounded-2xl border-4 border-white shadow-2xl mx-auto mb-4">
                 <h2 class="text-xl font-black text-slate-800 uppercase tracking-tighter" id="res-name"></h2>
                 <p class="text-[10px] font-black text-green-600 mt-2 italic uppercase tracking-widest" id="res-time"></p>
-                <button class="w-full mt-8 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest shadow-xl" onclick="location.reload()">TIẾP TỤC</button>
+                <button class="w-full mt-8 py-5 bg-slate-900 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest" onclick="location.reload()">TIẾP TỤC</button>
             </div>
         </div>
     </div>
 </div>
 
-<footer class="mt-8 text-[10px] text-slate-400 uppercase tracking-[0.3em] font-black">VDC Safety v1.6.3 | <span class="text-slate-800 italic">Mr. An Toàn</span></footer>
+<footer class="mt-8 text-[10px] text-slate-400 uppercase tracking-[0.3em] font-black">VDC Safety v1.6.4 | <span class="text-slate-800 italic">Mr. An Toàn</span></footer>
 
 <script>
     const firebaseConfig = {
@@ -112,11 +112,13 @@
                 faceapi.nets.faceRecognitionNet.loadFromUri(URL)
             ]);
             document.getElementById('loading-msg').style.display = 'none';
-            db.ref('current_session').on('value', snap => {
+            
+            // Theo dõi session để lấy ID lớp
+            db.ref('current_session').on('value', async snap => {
                 session = snap.val();
-                if(session) {
+                if(session && session.source) {
                     document.getElementById('session-info').innerHTML = `<i class="fas fa-university mr-1"></i> LỚP: ${session.class}`;
-                    loadFaceDB(); // Load lại DB khi session đổi lớp
+                    await loadFaceDB(); // Nạp dữ liệu nhận diện ngay
                 }
             });
             startCamera();
@@ -156,13 +158,27 @@
 
     async function loadFaceDB() {
         if (!session || !session.source) return;
-        // Lấy DB từ nhánh lớp hiện tại thay vì nhánh students cũ
         const snap = await db.ref(`classes/${session.source}/students`).once('value');
         const data = snap.val() || {};
-        const labeled = Object.values(data)
-            .filter(u => u && u.descriptor)
-            .map(u => new faceapi.LabeledFaceDescriptors(u.stt.toString(), [new Float32Array(u.descriptor)]));
-        if(labeled.length > 0) faceMatcher = new faceapi.FaceMatcher(labeled, 0.42);
+        
+        const labeledDescriptors = [];
+        for (let key in data) {
+            const u = data[key];
+            // CHỐT CHẶN: Chỉ nạp nếu có descriptor hợp lệ
+            if (u && u.descriptor && Array.isArray(u.descriptor)) {
+                labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(
+                    u.stt.toString(), 
+                    [new Float32Array(u.descriptor)]
+                ));
+            }
+        }
+
+        if (labeledDescriptors.length > 0) {
+            faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.42);
+            console.log("✅ Đã nạp " + labeledDescriptors.length + " khuôn mặt từ nhánh classes.");
+        } else {
+            console.log("⚠️ Lớp này chưa có ai đăng ký khuôn mặt.");
+        }
     }
 
     async function checkFace() {
@@ -172,18 +188,20 @@
         canvas.getContext('2d').drawImage(v, (v.videoWidth-(v.videoHeight*0.75))/2, v.videoHeight*0.05, v.videoHeight*0.75, v.videoHeight*0.95, 0, 0, 450, 600);
         capturedPhoto = canvas.toDataURL('image/jpeg', 0.8);
 
+        // Kiểm tra nhận diện
         if(faceMatcher && lastDescriptor) {
             const match = faceMatcher.findBestMatch(lastDescriptor);
             if(match.label !== 'unknown') {
                 const snap = await db.ref(`classes/${session.source}/students/${match.label}`).once('value');
-                if(snap.val()) {
-                    currentStudent = snap.val();
-                    currentStudent.photo = capturedPhoto; 
-                    return saveAttendance(currentStudent);
+                const st = snap.val();
+                if(st) {
+                    st.photo = capturedPhoto; 
+                    return saveAttendance(st);
                 }
             }
         }
-        // Nếu không nhận diện được mặt -> Chuyển sang tìm tên
+        
+        // Không nhận diện được -> Chuyển sang tìm kiếm
         document.getElementById('scanner-section').style.display = 'none';
         document.getElementById('search-section').classList.remove('hidden');
     }
@@ -203,9 +221,9 @@
         });
 
         if(found) {
-            // SỬA LỖI TẠI ĐÂY: Kiểm tra đúng face_id_url trong hồ sơ lớp
-            if(found.face_id_url) {
-                alert("⚠️ HỒ SƠ NÀY ĐÃ ĐƯỢC ĐĂNG KÝ MẶT RỒI!\nAnh/Chị hãy đứng thẳng trước camera để AI nhận diện. Nếu đổi máy, hãy báo thầy xóa đăng ký cũ.");
+            // Chặn đăng ký trùng
+            if(found.face_id_url || found.descriptor) {
+                alert("⚠️ HỒ SƠ NÀY ĐÃ CÓ DỮ LIỆU!\nVui lòng đứng thẳng trước camera để AI nhận diện. Nếu đổi máy, hãy báo thầy xóa đăng ký cũ.");
                 location.reload();
                 return;
             }
@@ -217,34 +235,33 @@
             document.getElementById('c1').value = found.stt;
             document.getElementById('c2').value = found.name;
             document.getElementById('c4').value = found.dob || "---";
-            document.getElementById('c7').value = found.department || found.company || "VDC Safety";
-        } else { alert("Không tìm thấy tên này trong danh sách lớp!"); }
+            document.getElementById('c7').value = found.company || found.department || "VDC Safety";
+        } else { alert("Không tìm thấy tên trong danh sách lớp!"); }
     }
 
     async function saveFinal() {
+        if(!lastDescriptor) return alert("Chưa khóa được mặt!");
         const data = { 
-            ...currentStudent, 
             descriptor: Array.from(lastDescriptor), 
-            face_id_url: capturedPhoto, // Ghi đè url mẫu gốc
-            time: new Date().toLocaleTimeString('vi-VN') 
+            face_id_url: capturedPhoto 
         };
-        // Lưu ngược vào đúng hồ sơ học viên trong lớp
-        await db.ref(`classes/${session.source}/students/${data.stt}`).update({
-            descriptor: data.descriptor,
-            face_id_url: capturedPhoto
-        });
-        saveAttendance(data);
+        // Lưu thẳng vào nhánh classes học viên đó
+        await db.ref(`classes/${session.source}/students/${currentStudent.stt}`).update(data);
+        
+        currentStudent.photo = capturedPhoto;
+        saveAttendance(currentStudent);
     }
 
     async function saveAttendance(st) {
         const today = new Date().toISOString().slice(0,10);
         const timeStr = new Date().toLocaleTimeString('vi-VN');
         
-        // Lưu điểm danh ngày
+        // Ghi nhận điểm danh ngày
         await db.ref(`attendance/${today}/${st.stt}`).set({ 
             name: st.name, 
+            time: timeStr,
             timestamp: Date.now(),
-            face_thumb: st.photo || capturedPhoto 
+            photo: st.photo || capturedPhoto 
         });
 
         isDetecting = false;
