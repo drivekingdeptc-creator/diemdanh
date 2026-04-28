@@ -2,172 +2,97 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VDC SAFETY - NỘP BÀI AI v2.0</title>
-    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VDC SAFETY - NỘP BÀI ONLINE</title>
     <style>
-        body { background: #f1f5f9; font-family: 'Inter', sans-serif; overflow: hidden; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        .app-container { width: 95%; max-width: 420px; background: white; border-radius: 35px; box-shadow: 0 15px 45px rgba(0,0,0,0.12); overflow: hidden; max-height: 98vh; display: flex; flex-direction: column; }
-        #video-container { position: relative; width: 280px; height: 210px; margin: 10px auto; background: #000; border-radius: 20px; overflow: hidden; border: 4px solid #fff; }
-        video { width: 100%; height: 100%; object-fit: cover; }
-        .btn-vdc { background: #1e293b; color: white; transition: 0.3s; }
-        .btn-vdc:disabled { opacity: 0.3; }
-        .step-tag { background: #3b82f6; color: white; padding: 2px 10px; border-radius: 10px; font-size: 9px; font-weight: 900; text-transform: uppercase; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        .header { background: #1a73e8; color: white; width: 100%; padding: 15px; text-align: center; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        /* Đồng bộ khung quét khuôn mặt tròn từ diemdanh.html */
+        .camera-container { position: relative; width: 280px; height: 280px; margin-top: 30px; border-radius: 50%; overflow: hidden; border: 4px solid #fff; box-shadow: 0 0 20px rgba(0,0,0,0.2); }
+        #video { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* Hiệu ứng Radar quét */
+        .scanner-line { position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: rgba(26, 115, 232, 0.6); box-shadow: 0 0 15px #1a73e8; animation: scan 2s linear infinite; }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+        .status-msg { margin-top: 20px; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; background: #e8f0fe; color: #1a73e8; }
+        
+        /* Phần chọn file bài làm - ẩn đi cho đến khi nhận diện xong */
+        .upload-section { display: none; width: 90%; max-width: 400px; background: white; padding: 20px; border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        input[type="file"] { width: 100%; padding: 10px; margin: 10px 0; }
+        .btn-submit { background: #28a745; color: white; border: none; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
+    <div class="header">HỆ THỐNG NỘP BÀI VDC SAFETY</div>
 
-<div class="app-container">
-    <div id="session-info" class="bg-slate-900 text-white p-3 text-[10px] text-center font-black uppercase tracking-widest text-blue-400">Hệ thống nộp bài AI</div>
-
-    <div class="p-5 text-center flex-1 flex flex-col justify-between">
-        <p id="loading-msg" class="text-[10px] text-red-500 font-black animate-pulse mb-2 uppercase italic">⌛ Đang kết nối bộ lọc AI...</p>
-
-        <div id="auth-section" class="space-y-3">
-            <div class="flex justify-center"><span class="step-tag">Bước 1: Xác thực khuôn mặt</span></div>
-            <div id="video-container">
-                <video id="videoFace" autoplay muted playsinline class="scale-x-[-1]"></video>
-                <div class="absolute inset-0 border-2 border-dashed border-white/30 rounded-2xl pointer-events-none"></div>
-            </div>
-            <p id="scan-status" class="text-[10px] font-black text-slate-400 uppercase">Áp mặt vào khung để nhận diện</p>
-            <button id="btnAuth" onclick="verifyFace()" disabled class="btn-vdc w-full py-4 rounded-2xl font-black text-sm uppercase shadow-lg">Xác nhận là tôi</button>
-        </div>
-
-        <div id="upload-section" class="hidden space-y-3 fade-in">
-            <div class="flex justify-center"><span class="step-tag bg-green-600">Bước 2: Chụp ảnh bài thi</span></div>
-            <div class="bg-slate-50 p-3 rounded-2xl border-2 border-dashed border-slate-200">
-                <p class="text-[10px] font-bold text-slate-500 mb-2 uppercase">Chào anh/chị: <span id="user-name" class="text-blue-600"></span></p>
-                <div id="video-container" class="!w-full !h-48">
-                    <video id="videoExam" autoplay muted playsinline></video>
-                </div>
-            </div>
-            <button onclick="captureExam()" class="bg-blue-600 text-white w-full py-4 rounded-2xl font-black text-sm uppercase shadow-lg">Chụp & Nộp bài</button>
-        </div>
-
-        <div id="result-section" class="hidden py-10">
-            <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl shadow-xl"><i class="fas fa-check"></i></div>
-            <h2 class="text-2xl font-black text-slate-800 uppercase tracking-tighter">Nộp bài thành công</h2>
-            <p class="text-xs font-bold text-slate-400 mt-2 uppercase">Hệ thống VDC đã ghi nhận bài thi của anh/chị.</p>
-            <button onclick="location.reload()" class="mt-8 text-blue-600 font-black uppercase text-[10px] underline">Nộp bài khác</button>
-        </div>
+    <div class="camera-container">
+        <video id="video" autoplay playsinline muted></video>
+        <div class="scanner-line"></div>
     </div>
-</div>
 
-<script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxzLK_ZNVHoMTInV_Mo-_-q6fMUYlR1uLElrev9h-HwLXg70NVZDyX0veXPDmDmAVk/exec";
-    const firebaseConfig = {
-        databaseURL: "https://hepc-ed95d-default-rtdb.firebaseio.com"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+    <div id="status" class="status-msg">🔍 Đang nhận diện khuôn mặt học viên...</div>
 
-    let faceMatcher, session, currentStudent, lastDescriptor, isAuth = false;
+    <div id="uploadArea" class="upload-section">
+        <h3 style="margin-top:0; color:#333;">Xác thực thành công!</h3>
+        <p id="studentName" style="color:#666; font-size:14px;"></p>
+        <label>Chọn ảnh bài làm (STT_HoTen_...):</label>
+        <input type="file" id="fileInput" accept="image/*">
+        <button class="btn-submit" onclick="uploadPaper()">🚀 NỘP BÀI NGAY</button>
+    </div>
 
-    async function init() {
-        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
-        await Promise.all([
-            faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
-            faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-            faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
-        ]);
-        document.getElementById('loading-msg').style.display = 'none';
-        
-        db.ref('current_session').on('value', async snap => {
-            session = snap.val();
-            if(session) loadClassDB();
-        });
-        startCamera("videoFace", "user");
-    }
+    <canvas id="canvas" style="display:none;"></canvas>
 
-    async function startCamera(id, mode) {
-        const video = document.getElementById(id);
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
-        video.srcObject = stream;
-        if(id === "videoFace") {
-            setInterval(async () => {
-                if(isAuth) return;
-                const det = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
-                if(det) {
-                    lastDescriptor = det.descriptor;
-                    document.getElementById('btnAuth').disabled = false;
-                    document.getElementById('scan-status').innerText = "✅ ĐÃ NHẬN DIỆN";
-                    document.getElementById('scan-status').className = "text-[10px] font-black text-green-600 uppercase";
-                }
-            }, 700);
-        }
-    }
+    <script>
+        const video = document.getElementById('video');
+        const status = document.getElementById('status');
+        const uploadArea = document.getElementById('uploadArea');
 
-    async function loadClassDB() {
-        const snap = await db.ref(`classes/${session.source}/students`).once('value');
-        const data = snap.val() || {};
-        const labeled = [];
-        for (let k in data) {
-            if (data[k] && data[k].descriptor) {
-                labeled.push(new faceapi.LabeledFaceDescriptors(data[k].stt.toString(), [new Float32Array(data[k].descriptor)]));
-            }
-        }
-        if (labeled.length > 0) faceMatcher = new faceapi.FaceMatcher(labeled, 0.45);
-    }
+        // Mở Camera ngay khi load
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+        .then(stream => { video.srcObject = stream; setTimeout(captureAndVerify, 2000); })
+        .catch(err => { status.innerText = "❌ Không thể mở Camera"; });
 
-    async function verifyFace() {
-        if(!faceMatcher || !lastDescriptor) return alert("AI chưa sẵn sàng hoặc không thấy mặt!");
-        const match = faceMatcher.findBestMatch(lastDescriptor);
-        if(match.label === 'unknown') return alert("Không nhận diện được! Vui lòng nhìn thẳng camera.");
-        
-        const snap = await db.ref(`classes/${session.source}/students/${match.label}`).once('value');
-        currentStudent = snap.val();
-        
-        isAuth = true;
-        document.getElementById('user-name').innerText = currentStudent.name;
-        document.getElementById('auth-section').classList.add('hidden');
-        document.getElementById('upload-section').classList.remove('hidden');
-        startCamera("videoExam", "environment"); // Chuyển sang camera sau để chụp bài
-    }
-
-    async function captureExam() {
-        const video = document.getElementById('videoExam');
-        const canvas = document.createElement('canvas');
-        canvas.width = 600; canvas.height = 800;
-        canvas.getContext('2d').drawImage(video, 0, 0, 600, 800);
-        const photoData = canvas.toDataURL('image/jpeg', 0.8);
-        
-        document.getElementById('upload-section').innerHTML = "<p class='text-blue-600 font-black animate-bounce'>🚀 ĐANG TẢI BÀI LÊN HỆ THỐNG...</p>";
-        
-        // Gửi về Google App Script để lưu Drive
-        const payload = {
-            action: "saveToDrive",
-            params: {
-                folderId: session.storage_id,
-                stt: currentStudent.stt,
-                name: removeAccents(currentStudent.name),
-                photoData: photoData
-            }
-        };
-
-        fetch(GAS_URL, { method: "POST", body: JSON.stringify(payload) })
-        .then(() => {
-            // Cập nhật trạng thái nộp bài lên Firebase
-            const today = new Date().toISOString().slice(0,10);
-            db.ref(`submissions/${today}/${currentStudent.stt}`).set({
-                name: currentStudent.name,
-                stt: currentStudent.stt,
-                photo_exam: photoData,
-                timestamp: Date.now(),
-                signed: false
-            });
+        function captureAndVerify() {
+            const canvas = document.getElementById('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
             
-            document.getElementById('upload-section').classList.add('hidden');
-            document.getElementById('result-section').classList.remove('hidden');
-        });
-    }
+            const base64 = canvas.toDataURL('image/jpeg');
+            
+            // Gọi GAS để nhận diện (Đồng bộ logic diemdanh.html)
+            google.script.run.withSuccessHandler(res => {
+                if (res.verified) {
+                    status.style.display = "none";
+                    uploadArea.style.display = "block";
+                    document.getElementById('studentName').innerText = "Chào bạn: " + res.name;
+                    // Dừng camera để tiết kiệm pin
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                } else {
+                    status.innerText = "⚠️ Không khớp khuôn mặt, đang thử lại...";
+                    setTimeout(captureAndVerify, 3000);
+                }
+            }).processFaceRecognition(base64);
+        }
 
-    function removeAccents(str) { return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D'); }
-
-    init();
-</script>
+        function uploadPaper() {
+            const file = document.getElementById('fileInput').files[0];
+            if(!file) return alert("Vui lòng chọn ảnh bài làm!");
+            
+            status.style.display = "block";
+            status.innerText = "📤 Đang tải bài làm lên hệ thống...";
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                google.script.run.withSuccessHandler(msg => {
+                    alert("✅ " + msg);
+                    window.location.reload();
+                }).handleFileUpload(e.target.result, file.name);
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
 </body>
 </html>
